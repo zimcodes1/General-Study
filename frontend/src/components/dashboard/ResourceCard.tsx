@@ -1,4 +1,4 @@
-import { FileText, Star, ExternalLink } from "lucide-react";
+import { FileText, Star, ExternalLink, X } from "lucide-react";
 
 interface ResourceCardProps {
 	title: string;
@@ -10,6 +10,8 @@ interface ResourceCardProps {
 	rating?: number;
 	department?: string;
 	level?: string;
+	showRemoveButton?: boolean;
+	onRemove?: () => void;
 }
 
 export default function ResourceCard({
@@ -21,6 +23,8 @@ export default function ResourceCard({
 	rating,
 	department,
 	level,
+	showRemoveButton = false,
+	onRemove,
 }: ResourceCardProps) {
 	const getIcon = () => {
 		return <FileText className="w-8 h-8" />;
@@ -44,6 +48,18 @@ export default function ResourceCard({
 					<div className="absolute top-3 left-3 px-3 py-1.5 bg-tertiary-container/80 backdrop-blur-md rounded-full text-xs text-tertiary font-semibold font-jakarta">
 						{courseCode}
 					</div>
+				)}
+				{showRemoveButton && (
+					<button
+						onClick={(e) => {
+							e.stopPropagation();
+							onRemove?.();
+						}}
+						className="absolute top-3 right-3 w-8 h-8 rounded-full bg-surface-variant/60 backdrop-blur-md flex items-center justify-center text-on-surface-variant hover:bg-surface-variant hover:text-on-surface transition-all opacity-0 group-hover:opacity-100"
+						title="Remove from catalogue"
+					>
+						<X className="w-4 h-4" />
+					</button>
 				)}
 			</div>
 
