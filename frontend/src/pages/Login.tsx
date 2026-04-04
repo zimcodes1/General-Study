@@ -1,96 +1,106 @@
-import { Link } from 'react-router-dom';
-import { Mail, Lock, Zap } from 'lucide-react';
-import Apple from '../components/svgs/Apple';
-import Google from '../components/svgs/Google';
-import { useEffect } from 'react';
+import { Link } from "react-router-dom";
+import { Mail, Lock, Zap } from "lucide-react";
+import Google from "../components/svgs/Google";
+import { useEffect } from "react";
 
 export default function Login() {
+	useEffect(() => {
+		document.title = "Login - General Study";
+	}, []);
 
-  useEffect(() => {
-    document.title = "Login - General Study";
-  }, []);
+	return (
+		<div className="min-h-screen bg-surface flex items-center justify-center px-4 py-8 relative">
+			<div className="w-full max-w-md">
+				<div className="text-center mb-12">
+					<div className="inline-flex items-center justify-center w-13 h-13 rounded-2xl mb-6">
+						<img src="/images/logo.png" alt="General Study Logo" />
+					</div>
+					<h1 className="text-4xl font-bold text-on-surface mb-2 tracking-tight">
+						General Study
+					</h1>
+					<p className="text-on-surface-variant text-sm tracking-wide">
+						SMARTER STUDY. POWERED BY AI.
+					</p>
+				</div>
 
-  return (
-    <div className="min-h-screen bg-surface flex items-center justify-center px-4 py-8 relative">
-      <div className="w-full max-w-md">
-        <div className="text-center mb-12">
-          <div className="inline-flex items-center justify-center w-13 h-13 rounded-2xl mb-6">
-            <img src="/images/logo.png" alt="General Study Logo" />
-          </div>
-          <h1 className="text-4xl font-bold text-on-surface mb-2 tracking-tight">General Study</h1>
-          <p className="text-on-surface-variant text-sm tracking-wide">SMARTER STUDY. POWERED BY AI.</p>
-        </div>
+				<div className="bg-surface-container-low/60 backdrop-blur-[40px] rounded-3xl p-8 border border-outline-variant/15">
+					<form className="space-y-6">
+						<div>
+							<label className="block text-on-surface-variant text-xs uppercase tracking-wider mb-3 font-jakarta">
+								Email Address
+							</label>
+							<div className="relative">
+								<Mail className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-on-surface-variant" />
+								<input
+									type="email"
+									placeholder="name@example.com"
+									className="w-full bg-surface-container-low rounded-xl pl-12 pr-4 py-3.5 text-on-surface placeholder:text-on-surface-variant/50 focus:bg-surface-container-high focus:outline-none focus:ring-2 focus:ring-tertiary/30 transition-all"
+								/>
+							</div>
+						</div>
 
-        <div className="bg-surface-container-low/60 backdrop-blur-[40px] rounded-3xl p-8 border border-outline-variant/15">
-          <form className="space-y-6">
-            <div>
-              <label className="block text-on-surface-variant text-xs uppercase tracking-wider mb-3 font-jakarta">Email Address</label>
-              <div className="relative">
-                <Mail className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-on-surface-variant" />
-                <input
-                  type="email"
-                  placeholder="name@example.com"
-                  className="w-full bg-surface-container-low rounded-xl pl-12 pr-4 py-3.5 text-on-surface placeholder:text-on-surface-variant/50 focus:bg-surface-container-high focus:outline-none focus:ring-2 focus:ring-tertiary/30 transition-all"
-                />
-              </div>
-            </div>
+						<div>
+							<div className="flex justify-between items-center mb-3">
+								<label className="block text-on-surface-variant text-xs uppercase tracking-wider font-jakarta">
+									Password
+								</label>
+								<Link
+									to="/forgot-password"
+									className="text-tertiary text-xs hover:text-tertiary/80 transition-colors"
+								>
+									Forgot Password?
+								</Link>
+							</div>
+							<div className="relative">
+								<Lock className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-on-surface-variant" />
+								<input
+									type="password"
+									placeholder="••••••••"
+									className="w-full bg-surface-container-low rounded-xl pl-12 pr-4 py-3.5 text-on-surface placeholder:text-on-surface-variant/50 focus:bg-surface-container-high focus:outline-none focus:ring-2 focus:ring-tertiary/30 transition-all"
+								/>
+							</div>
+						</div>
 
-            <div>
-              <div className="flex justify-between items-center mb-3">
-                <label className="block text-on-surface-variant text-xs uppercase tracking-wider font-jakarta">Password</label>
-                <Link to="/forgot-password" className="text-tertiary text-xs hover:text-tertiary/80 transition-colors">
-                  Forgot Password?
-                </Link>
-              </div>
-              <div className="relative">
-                <Lock className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-on-surface-variant" />
-                <input
-                  type="password"
-                  placeholder="••••••••"
-                  className="w-full bg-surface-container-low rounded-xl pl-12 pr-4 py-3.5 text-on-surface placeholder:text-on-surface-variant/50 focus:bg-surface-container-high focus:outline-none focus:ring-2 focus:ring-tertiary/30 transition-all"
-                />
-              </div>
-            </div>
+						<button
+							type="submit"
+							className="w-full bg-gradient-to-r from-primary to-secondary text-on-primary-fixed font-semibold py-4 rounded-full hover:shadow-[0_0_40px_rgba(155,168,255,0.3)] transition-all duration-300 flex items-center justify-center gap-2 font-jakarta"
+						>
+							Login & Continue
+							<Zap className="w-5 h-5 fill-current" />
+						</button>
+					</form>
 
-            <button
-              type="submit"
-              className="w-full bg-gradient-to-r from-primary to-secondary text-on-primary-fixed font-semibold py-4 rounded-full hover:shadow-[0_0_40px_rgba(155,168,255,0.3)] transition-all duration-300 flex items-center justify-center gap-2 font-jakarta"
-            >
-              Login & Continue
-              <Zap className="w-5 h-5 fill-current" />
-            </button>
-          </form>
+					<div className="mt-8">
+						<div className="relative">
+							<div className="absolute inset-0 flex items-center">
+								<div className="w-full border-t border-outline-variant/20"></div>
+							</div>
+							<div className="relative flex justify-center text-xs">
+								<span className="bg-surface-container-low px-4 text-on-surface-variant">
+									OR CONTINUE WITH
+								</span>
+							</div>
+						</div>
 
-          <div className="mt-8">
-            <div className="relative">
-              <div className="absolute inset-0 flex items-center">
-                <div className="w-full border-t border-outline-variant/20"></div>
-              </div>
-              <div className="relative flex justify-center text-xs">
-                <span className="bg-surface-container-low px-4 text-on-surface-variant">OR CONTINUE WITH</span>
-              </div>
-            </div>
+						<div className="flex justify-center items-center mt-6">
+							<button className="w-full bg-surface-container-high rounded-xl py-3 text-on-surface text-sm font-jakarta hover:bg-surface-container-highest transition-colors flex items-center justify-center gap-2">
+								<Google />
+								Google
+							</button>
+						</div>
+					</div>
+				</div>
 
-            <div className="grid grid-cols-2 gap-4 mt-6">
-              <button className="bg-surface-container-high rounded-xl py-3 text-on-surface text-sm font-jakarta hover:bg-surface-container-highest transition-colors flex items-center justify-center gap-2">
-                <Google/>
-                Google
-              </button>
-              <button className="bg-surface-container-high rounded-xl py-3 text-on-surface text-sm font-jakarta hover:bg-surface-container-highest transition-colors flex items-center justify-center gap-2">
-              <Apple/>
-                Apple
-              </button>
-            </div>
-          </div>
-        </div>
-
-        <p className="text-center mt-8 text-on-surface-variant text-sm">
-          Don't have an account?{' '}
-          <Link to="/signup" className="text-tertiary hover:text-tertiary/80 transition-colors font-semibold">
-            Sign up
-          </Link>
-        </p>
-      </div>
-    </div>
-  );
+				<p className="text-center mt-8 text-on-surface-variant text-sm">
+					Don't have an account?{" "}
+					<Link
+						to="/signup"
+						className="text-tertiary hover:text-tertiary/80 transition-colors font-semibold"
+					>
+						Sign up
+					</Link>
+				</p>
+			</div>
+		</div>
+	);
 }
