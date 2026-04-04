@@ -1,0 +1,47 @@
+@import 'tailwindcss';
+
+@theme {
+  --color-surface: #0a0e19;
+  --color-surface-dim: #080b14;
+  --color-surface-container-low: #0f1320;
+  --color-surface-container: #141827;
+  --color-surface-container-high: #1a1f2e;
+  --color-surface-container-highest: #202535;
+  --color-surface-variant: #2a2f3e;
+  --color-on-surface: #ffffff;
+  --color-on-surface-variant: #a7aaba;
+  --color-primary: #9ba8ff;
+  --color-primary-dim: #4963ff;
+  --color-secondary: #a68cff;
+  --color-tertiary: #81ecff;
+  --color-tertiary-container: #1a3a42;
+  --color-outline-variant: #3a3f4e;
+  --color-on-primary-fixed: #000000;
+  
+  --font-family-manrope: 'Manrope', system-ui, sans-serif;
+  --font-family-jakarta: 'Plus Jakarta Sans', system-ui, sans-serif;
+}
+
+@layer base {
+  @font-face {
+    font-family: 'Manrope';
+    font-style: normal;
+    font-weight: 400 800;
+    font-display: swap;
+    src: url('https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&display=swap');
+  }
+  
+  @font-face {
+    font-family: 'Plus Jakarta Sans';
+    font-style: normal;
+    font-weight: 400 700;
+    font-display: swap;
+    src: url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap');
+  }
+  
+  body {
+    font-family: var(--font-family-manrope);
+    background-color: var(--color-surface);
+    color: var(--color-on-surface);
+  }
+}
