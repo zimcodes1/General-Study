@@ -6,6 +6,7 @@ import MyCatalogues from './pages/MyCatalogues';
 import Resources from './pages/Resources';
 import Profile from './pages/Profile';
 import Settings from './pages/Settings';
+import CatalogueOverview from './pages/CatalogueOverview';
 
 function App() {
   return (
@@ -18,6 +19,7 @@ function App() {
         <Route path="/resources" element={<Resources />} />
         <Route path="/profile" element={<Profile />} />
         <Route path="/settings" element={<Settings />} />
+        <Route path="/catalogue/:id" element={<CatalogueOverview />} />
         <Route path="/" element={<Navigate to="/dashboard" replace />} />
       </Routes>
     </BrowserRouter>
