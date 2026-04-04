@@ -1,5 +1,5 @@
 import { Link, useLocation } from 'react-router-dom';
-import { Home, BookOpen, FileText, BarChart3, Settings, X } from 'lucide-react';
+import { Home, BookOpen, FileText, User, Settings, X } from 'lucide-react';
 
 interface SidebarProps {
   isOpen: boolean;
@@ -13,7 +13,7 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
     { icon: Home, label: 'Dashboard', path: '/dashboard' },
     { icon: BookOpen, label: 'My Catalogues', path: '/catalogues' },
     { icon: FileText, label: 'Resources', path: '/resources' },
-    { icon: BarChart3, label: 'Analytics', path: '/analytics' },
+    { icon: User, label: 'Profile', path: '/profile' },
     { icon: Settings, label: 'Settings', path: '/settings' },
   ];
 
