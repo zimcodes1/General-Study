@@ -1,0 +1,39 @@
+import ResourceCard from './ResourceCard';
+
+interface Resource {
+  id: string;
+  title: string;
+  type: 'pdf' | 'video' | 'article';
+  duration?: string;
+  thumbnail?: string;
+  subject: string;
+  progress?: number;
+  courseCode?: string;
+}
+
+interface ResourceGridProps {
+  title: string;
+  resources: Resource[];
+  maxItems?: number;
+}
+
+export default function ResourceGrid({ title, resources, maxItems = 3 }: ResourceGridProps) {
+  const displayedResources = resources.slice(0, maxItems);
+
+  return (
+    <section className="mb-12">
+      <div className="flex items-center justify-between mb-6">
+        <h2 className="text-2xl font-bold text-on-surface tracking-tight">{title}</h2>
+        <button className="text-sm text-tertiary hover:text-tertiary/80 transition-colors font-jakarta">
+          View All →
+        </button>
+      </div>
+
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        {displayedResources.map((resource) => (
+          <ResourceCard key={resource.id} {...resource} />
+        ))}
+      </div>
+    </section>
+  );
+}

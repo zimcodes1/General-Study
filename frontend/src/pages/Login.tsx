@@ -2,8 +2,14 @@ import { Link } from 'react-router-dom';
 import { Mail, Lock, Zap } from 'lucide-react';
 import Apple from '../components/svgs/Apple';
 import Google from '../components/svgs/Google';
+import { useEffect } from 'react';
 
 export default function Login() {
+
+  useEffect(() => {
+    document.title = "Login - General Study";
+  }, []);
+
   return (
     <div className="min-h-screen bg-surface flex items-center justify-center px-4 py-8 relative">
       <div className="w-full max-w-md">

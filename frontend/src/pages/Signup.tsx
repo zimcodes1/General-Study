@@ -8,7 +8,7 @@ import {
 	Lock,
 	Zap,
 } from "lucide-react";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 
 export default function Signup() {
 	const [password, setPassword] = useState("");
@@ -22,6 +22,10 @@ export default function Signup() {
 
 	const { strength, label } = getPasswordStrength(password);
 
+//Set page title
+useEffect((()=>{
+  document.title = "Sign Up - General Study";
+}))
 	return (
 		<div className="min-h-screen bg-surface flex items-center justify-center px-4 py-12 relative">
 			<div className="w-full max-w-2xl">
