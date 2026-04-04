@@ -5,6 +5,7 @@ import Dashboard from './pages/Dashboard';
 import MyCatalogues from './pages/MyCatalogues';
 import Resources from './pages/Resources';
 import Profile from './pages/Profile';
+import Settings from './pages/Settings';
 
 function App() {
   return (
@@ -16,6 +17,7 @@ function App() {
         <Route path="/catalogues" element={<MyCatalogues />} />
         <Route path="/resources" element={<Resources />} />
         <Route path="/profile" element={<Profile />} />
+        <Route path="/settings" element={<Settings />} />
         <Route path="/" element={<Navigate to="/dashboard" replace />} />
       </Routes>
     </BrowserRouter>
