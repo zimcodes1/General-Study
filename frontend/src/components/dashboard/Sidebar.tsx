@@ -1,5 +1,5 @@
 import { Link, useLocation } from 'react-router-dom';
-import { Home, BookOpen, FileText, User, Settings, Sparkles, X, Shield } from 'lucide-react';
+import { Home, BookOpen, FileText, User, Settings, X, Shield } from 'lucide-react';
 
 interface SidebarProps {
   isOpen: boolean;
