@@ -49,7 +49,6 @@ export default function RecentReadingsCarousel({ resources }: RecentReadingsCaro
     setCurrentIndex((prev) => Math.min(maxIndex, prev + 1));
   };
 
-  const visibleResources = resources.slice(currentIndex, currentIndex + itemsPerPage);
 
   return (
     <section className="mb-12">
