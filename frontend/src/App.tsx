@@ -10,22 +10,39 @@ import CatalogueOverview from './pages/CatalogueOverview';
 import LearningSession from './pages/LearningSession';
 import Assessment from './pages/Assessment';
 import AdminPanel from './pages/AdminPanel';
+import ProtectedRoute from './components/ProtectedRoute';
+import Preloader from './components/Preloader';
+import { useState, useEffect } from 'react';
 
 function App() {
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setLoading(false);
+    }, 1500);
+
+    return () => clearTimeout(timer);
+  }, []);
+
+  if (loading) {
+    return <Preloader />;
+  }
+
   return (
     <BrowserRouter>
       <Routes>
         <Route path="/login" element={<Login />} />
         <Route path="/signup" element={<Signup />} />
-        <Route path="/dashboard" element={<Dashboard />} />
-        <Route path="/catalogues" element={<MyCatalogues />} />
-        <Route path="/resources" element={<Resources />} />
-        <Route path="/profile" element={<Profile />} />
-        <Route path="/settings" element={<Settings />} />
-        <Route path="/catalogue/:id" element={<CatalogueOverview />} />
-        <Route path="/learn/:catalogueId/:topicId/:subtopicId" element={<LearningSession />} />
-        <Route path="/assessment/:catalogueId/:mode" element={<Assessment />} />
-        <Route path="/admin" element={<AdminPanel />} />
+        <Route path="/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
+        <Route path="/catalogues" element={<ProtectedRoute><MyCatalogues /></ProtectedRoute>} />
+        <Route path="/resources" element={<ProtectedRoute><Resources /></ProtectedRoute>} />
+        <Route path="/profile" element={<ProtectedRoute><Profile /></ProtectedRoute>} />
+        <Route path="/settings" element={<ProtectedRoute><Settings /></ProtectedRoute>} />
+        <Route path="/catalogue/:id" element={<ProtectedRoute><CatalogueOverview /></ProtectedRoute>} />
+        <Route path="/learn/:catalogueId/:topicId/:subtopicId" element={<ProtectedRoute><LearningSession /></ProtectedRoute>} />
+        <Route path="/assessment/:catalogueId/:mode" element={<ProtectedRoute><Assessment /></ProtectedRoute>} />
+        <Route path="/admin" element={<ProtectedRoute><AdminPanel /></ProtectedRoute>} />
         <Route path="/" element={<Navigate to="/dashboard" replace />} />
       </Routes>
     </BrowserRouter>
