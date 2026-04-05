@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import DashboardLayout from '../components/dashboard/DashboardLayout';
 import ResourceCard from '../components/dashboard/ResourceCard';
+import ResourceUploadModal from '../components/resources/ResourceUploadModal';
 import { Search, SlidersHorizontal, Upload, X } from 'lucide-react';
 
 export default function Resources() {
@@ -9,6 +10,7 @@ export default function Resources() {
   const [selectedDepartment, setSelectedDepartment] = useState('all');
   const [selectedLevel, setSelectedLevel] = useState('all');
   const [selectedCourse, setSelectedCourse] = useState('all');
+  const [showUploadModal, setShowUploadModal] = useState(false);
 
   const departments = ['All Departments', 'Computer Science', 'Engineering', 'Business', 'Mathematics'];
   const levels = ['All Levels', 'Beginner', 'Intermediate', 'Advanced'];
@@ -167,6 +169,10 @@ export default function Resources() {
 
   return (
     <DashboardLayout>
+      <ResourceUploadModal 
+        isOpen={showUploadModal} 
+        onClose={() => setShowUploadModal(false)} 
+      />
       <div className="px-4 lg:px-8 py-8">
         <div className="mb-8">
           <h1 className="text-3xl lg:text-4xl font-bold text-on-surface mb-2 tracking-tight">
@@ -297,7 +303,10 @@ export default function Resources() {
         )}
       </div>
 
-      <button className="fixed bottom-8 right-8 w-14 h-14 bg-gradient-to-r from-primary to-secondary rounded-full flex items-center justify-center text-on-primary-fixed shadow-[0_8px_32px_rgba(155,168,255,0.4)] hover:shadow-[0_12px_48px_rgba(155,168,255,0.6)] hover:scale-110 transition-all duration-300 z-30">
+      <button 
+        onClick={() => setShowUploadModal(true)}
+        className="fixed bottom-8 right-8 w-14 h-14 bg-gradient-to-r from-primary to-secondary rounded-full flex items-center justify-center text-on-primary-fixed shadow-[0_8px_32px_rgba(155,168,255,0.4)] hover:shadow-[0_12px_48px_rgba(155,168,255,0.6)] hover:scale-110 transition-all duration-300 z-30"
+      >
         <Upload className="w-6 h-6" />
       </button>
     </DashboardLayout>
