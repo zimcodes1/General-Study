@@ -3,7 +3,8 @@ from rest_framework.decorators import api_view, permission_classes
 from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated, AllowAny
 from rest_framework_simplejwt.tokens import RefreshToken
-from .serializers import UserRegistrationSerializer, UserSerializer, UserUpdateSerializer
+from .serializers import UserRegistrationSerializer, UserSerializer, UserUpdateSerializer, FacultySerializer, DepartmentSerializer
+from .faculty_models import Faculty, Department
 
 @api_view(['POST'])
 @permission_classes([AllowAny])
@@ -61,3 +62,21 @@ def update_profile(request):
         serializer.save()
         return Response(UserSerializer(request.user).data)
     return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+@api_view(['GET'])
+@permission_classes([AllowAny])
+def get_faculties(request):
+    faculties = Faculty.objects.all()
+    serializer = FacultySerializer(faculties, many=True)
+    return Response(serializer.data)
+
+@api_view(['GET'])
+@permission_classes([AllowAny])
+def get_departments(request):
+    faculty_id = request.query_params.get('faculty_id')
+    if faculty_id:
+        departments = Department.objects.filter(faculty_id=faculty_id)
+    else:
+        departments = Department.objects.all()
+    serializer = DepartmentSerializer(departments, many=True)
+    return Response(serializer.data)

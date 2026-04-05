@@ -1,6 +1,7 @@
 from django.db import models
 from django.contrib.auth.models import AbstractBaseUser, BaseUserManager, PermissionsMixin
 import uuid
+from .faculty_models import Faculty, Department
 
 class UserManager(BaseUserManager):
     def create_user(self, email, password=None, **extra_fields):
@@ -38,7 +39,8 @@ class User(AbstractBaseUser, PermissionsMixin):
     email = models.EmailField(unique=True)
     phone = models.CharField(max_length=20, blank=True)
     school = models.CharField(max_length=255)
-    department = models.CharField(max_length=255)
+    faculty = models.ForeignKey(Faculty, on_delete=models.SET_NULL, null=True, related_name='users')
+    department = models.ForeignKey(Department, on_delete=models.SET_NULL, null=True, related_name='users')
     degree_level = models.CharField(max_length=20, choices=DEGREE_LEVEL_CHOICES)
     current_level = models.CharField(max_length=3, choices=CURRENT_LEVEL_CHOICES)
     courses = models.JSONField(default=list, blank=True)
@@ -54,7 +56,7 @@ class User(AbstractBaseUser, PermissionsMixin):
     objects = UserManager()
     
     USERNAME_FIELD = 'email'
-    REQUIRED_FIELDS = ['full_name', 'school', 'department', 'degree_level', 'current_level']
+    REQUIRED_FIELDS = ['full_name', 'school', 'degree_level', 'current_level']
     
     def __str__(self):
         return self.email

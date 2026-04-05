@@ -56,7 +56,7 @@ export default function Topbar({ onMenuClick }: TopbarProps) {
           <div className="flex items-center gap-3 pl-4 border-l border-outline-variant/20">
             <div className="hidden sm:block text-right">
               <p className="text-sm font-semibold text-on-surface">{user?.full_name || 'User'}</p>
-              <p className="text-xs text-on-surface-variant">{user?.department || 'Student'}</p>
+              <p className="text-xs text-on-surface-variant">{user?.faculty?.name || user?.department?.name || 'Student'}</p>
             </div>
             <Link to='/profile' className="w-10 h-10 rounded-full bg-gradient-to-br from-primary to-secondary flex items-center justify-center text-on-primary-fixed font-bold text-sm">
               {user ? getInitials(user.full_name) : 'U'}

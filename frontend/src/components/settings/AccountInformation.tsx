@@ -1,10 +1,82 @@
 import { User, Mail, Phone, MapPin, Building2, GraduationCap } from 'lucide-react';
+import { useState, useEffect } from 'react';
+import { auth, authAPI, type Faculty, type Department } from '../../utils/auth';
 
 interface AccountInformationProps {
   onChange: () => void;
 }
 
 export default function AccountInformation({ onChange }: AccountInformationProps) {
+  const [user, setUser] = useState<any>(null);
+  const [faculties, setFaculties] = useState<Faculty[]>([]);
+  const [departments, setDepartments] = useState<Department[]>([]);
+  const [loadingDepartments, setLoadingDepartments] = useState(false);
+  const [formData, setFormData] = useState({
+    full_name: '',
+    email: '',
+    phone: '',
+    school: '',
+    faculty_id: '',
+    department_id: '',
+    degree_level: '',
+    current_level: '',
+  });
+
+  useEffect(() => {
+    const userData = auth.getUser();
+    setUser(userData);
+    if (userData) {
+      setFormData({
+        full_name: userData.full_name || '',
+        email: userData.email || '',
+        phone: userData.phone || '',
+        school: userData.school || '',
+        faculty_id: userData.faculty?.id || '',
+        department_id: userData.department?.id || '',
+        degree_level: userData.degree_level || '',
+        current_level: userData.current_level || '',
+      });
+      if (userData.faculty?.id) {
+        loadDepartments(userData.faculty.id);
+      }
+    }
+    loadFaculties();
+  }, []);
+
+  const loadFaculties = async () => {
+    try {
+      const data = await authAPI.getFaculties();
+      setFaculties(data);
+    } catch (err) {
+      console.error('Failed to load faculties:', err);
+    }
+  };
+
+  const loadDepartments = async (facultyId: string) => {
+    setLoadingDepartments(true);
+    try {
+      const data = await authAPI.getDepartments(facultyId);
+      setDepartments(data);
+    } catch (err) {
+      console.error('Failed to load departments:', err);
+    } finally {
+      setLoadingDepartments(false);
+    }
+  };
+
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
+    const { name, value } = e.target;
+    
+    if (name === 'faculty_id' && value) {
+      setFormData({ ...formData, faculty_id: value, department_id: '' });
+      setDepartments([]);
+      loadDepartments(value);
+    } else {
+      setFormData({ ...formData, [name]: value });
+    }
+    onChange();
+  };
+
   return (
     <div className="bg-surface-container-low rounded-3xl p-8 border border-outline-variant/10">
       <div className="mb-6">
@@ -22,8 +94,9 @@ export default function AccountInformation({ onChange }: AccountInformationProps
               <User className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-on-surface-variant" />
               <input
                 type="text"
-                defaultValue="Sarah Chen"
-                onChange={onChange}
+                name="full_name"
+                value={formData.full_name}
+                onChange={handleChange}
                 className="w-full bg-surface-container rounded-xl pl-12 pr-4 py-3 text-on-surface focus:bg-surface-container-high focus:outline-none focus:ring-2 focus:ring-tertiary/30 transition-all border border-outline-variant/10"
               />
             </div>
@@ -37,9 +110,11 @@ export default function AccountInformation({ onChange }: AccountInformationProps
               <Mail className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-on-surface-variant" />
               <input
                 type="email"
-                defaultValue="sarah.chen@university.edu"
-                onChange={onChange}
-                className="w-full bg-surface-container rounded-xl pl-12 pr-4 py-3 text-on-surface focus:bg-surface-container-high focus:outline-none focus:ring-2 focus:ring-tertiary/30 transition-all border border-outline-variant/10"
+                name="email"
+                value={formData.email}
+                onChange={handleChange}
+                disabled
+                className="w-full bg-surface-container rounded-xl pl-12 pr-4 py-3 text-on-surface-variant focus:bg-surface-container-high focus:outline-none focus:ring-2 focus:ring-tertiary/30 transition-all border border-outline-variant/10 cursor-not-allowed"
               />
             </div>
           </div>
@@ -54,8 +129,9 @@ export default function AccountInformation({ onChange }: AccountInformationProps
               <Phone className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-on-surface-variant" />
               <input
                 type="tel"
-                defaultValue="+1 (555) 123-4567"
-                onChange={onChange}
+                name="phone"
+                value={formData.phone}
+                onChange={handleChange}
                 className="w-full bg-surface-container rounded-xl pl-12 pr-4 py-3 text-on-surface focus:bg-surface-container-high focus:outline-none focus:ring-2 focus:ring-tertiary/30 transition-all border border-outline-variant/10"
               />
             </div>
@@ -69,8 +145,9 @@ export default function AccountInformation({ onChange }: AccountInformationProps
               <MapPin className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-on-surface-variant" />
               <input
                 type="text"
-                defaultValue="Tech University"
-                onChange={onChange}
+                name="school"
+                value={formData.school}
+                onChange={handleChange}
                 className="w-full bg-surface-container rounded-xl pl-12 pr-4 py-3 text-on-surface focus:bg-surface-container-high focus:outline-none focus:ring-2 focus:ring-tertiary/30 transition-all border border-outline-variant/10"
               />
             </div>
@@ -80,38 +157,92 @@ export default function AccountInformation({ onChange }: AccountInformationProps
         <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
           <div>
             <label className="block text-xs text-on-surface-variant uppercase tracking-wider mb-2 font-jakarta">
-              Department
+              Faculty
             </label>
             <div className="relative">
               <Building2 className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-on-surface-variant" />
               <select
-                defaultValue="Computer Science"
-                onChange={onChange}
+                name="faculty_id"
+                value={formData.faculty_id}
+                onChange={handleChange}
                 className="w-full bg-surface-container rounded-xl pl-12 pr-4 py-3 text-on-surface appearance-none focus:bg-surface-container-high focus:outline-none focus:ring-2 focus:ring-tertiary/30 transition-all border border-outline-variant/10"
               >
-                <option>Computer Science</option>
-                <option>Engineering</option>
-                <option>Business</option>
-                <option>Mathematics</option>
-                <option>Physics</option>
+                <option value="">Select Faculty</option>
+                {faculties.map((faculty) => (
+                  <option key={faculty.id} value={faculty.id}>
+                    {faculty.name}
+                  </option>
+                ))}
               </select>
             </div>
           </div>
 
           <div>
             <label className="block text-xs text-on-surface-variant uppercase tracking-wider mb-2 font-jakarta">
-              Level
+              Department
+            </label>
+            <div className="relative">
+              <Building2 className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-on-surface-variant" />
+              <select
+                name="department_id"
+                value={formData.department_id}
+                onChange={handleChange}
+                disabled={!formData.faculty_id || loadingDepartments}
+                className="w-full bg-surface-container rounded-xl pl-12 pr-4 py-3 text-on-surface appearance-none focus:bg-surface-container-high focus:outline-none focus:ring-2 focus:ring-tertiary/30 transition-all border border-outline-variant/10 disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                <option value="">
+                  {loadingDepartments ? 'Loading...' : 'Select Department'}
+                </option>
+                {departments.map((dept) => (
+                  <option key={dept.id} value={dept.id}>
+                    {dept.name}
+                  </option>
+                ))}
+              </select>
+            </div>
+          </div>
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+          <div>
+            <label className="block text-xs text-on-surface-variant uppercase tracking-wider mb-2 font-jakarta">
+              Degree Level
             </label>
             <div className="relative">
               <GraduationCap className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-on-surface-variant" />
               <select
-                defaultValue="Undergraduate"
-                onChange={onChange}
+                name="degree_level"
+                value={formData.degree_level}
+                onChange={handleChange}
                 className="w-full bg-surface-container rounded-xl pl-12 pr-4 py-3 text-on-surface appearance-none focus:bg-surface-container-high focus:outline-none focus:ring-2 focus:ring-tertiary/30 transition-all border border-outline-variant/10"
               >
-                <option>Undergraduate</option>
-                <option>Graduate</option>
-                <option>PhD</option>
+                <option value="">Select Degree Level</option>
+                <option value="undergraduate">Undergraduate</option>
+                <option value="graduate">Graduate</option>
+                <option value="postgraduate">Postgraduate</option>
+              </select>
+            </div>
+          </div>
+
+          <div>
+            <label className="block text-xs text-on-surface-variant uppercase tracking-wider mb-2 font-jakarta">
+              Current Level
+            </label>
+            <div className="relative">
+              <GraduationCap className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-on-surface-variant" />
+              <select
+                name="current_level"
+                value={formData.current_level}
+                onChange={handleChange}
+                className="w-full bg-surface-container rounded-xl pl-12 pr-4 py-3 text-on-surface appearance-none focus:bg-surface-container-high focus:outline-none focus:ring-2 focus:ring-tertiary/30 transition-all border border-outline-variant/10"
+              >
+                <option value="">Select Current Level</option>
+                <option value="100">100 Level</option>
+                <option value="200">200 Level</option>
+                <option value="300">300 Level</option>
+                <option value="400">400 Level</option>
+                <option value="500">500 Level</option>
+                <option value="600">600 Level</option>
               </select>
             </div>
           </div>

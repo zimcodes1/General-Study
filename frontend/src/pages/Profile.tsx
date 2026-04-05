@@ -9,11 +9,13 @@ import { auth } from "../utils/auth";
 
 export default function Profile() {
 	const [activeTab, setActiveTab] = useState<TabType>("resources");
-
 	const [userInfo, setUser] = useState<any>(null);
+
 	useEffect(() => {
 		const userData = auth.getUser();
-		setUser(userData);
+		if (userData) {
+			setUser(userData);
+		}
 	}, []);
 
 	const myResources = [
@@ -89,7 +91,7 @@ export default function Profile() {
 	return (
 		<DashboardLayout>
 			<div className="px-4 lg:px-8 py-8">
-				<ProfileHeader {...userInfo} onEdit={handleEditProfile} />
+				{userInfo && <ProfileHeader {...userInfo} onEdit={handleEditProfile} />}
 
 				<ProfileTabs activeTab={activeTab} onTabChange={setActiveTab} />
 

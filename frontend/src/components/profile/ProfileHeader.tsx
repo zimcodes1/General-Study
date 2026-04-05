@@ -5,7 +5,8 @@ interface ProfileHeaderProps {
   full_name: string;
   email: string;
   school: string;
-  department: string;
+  department: { id: string; name: string; faculty_id: string; faculty_name: string } | null;
+  faculty: { id: string; name: string } | null;
   current_level: string;
   avatar?: string;
   onEdit: () => void;
@@ -25,10 +26,14 @@ export default function ProfileHeader({
   email,
   school,
   department,
+  faculty,
   current_level,
   avatar,
   onEdit,
 }: ProfileHeaderProps) {
+  const departmentName = department?.name || 'N/A';
+  const facultyName = faculty?.name || 'N/A';
+  const levelDisplay = current_level ? `${current_level} Level` : 'N/A';
   return (
     <div className="bg-surface-container-low rounded-3xl p-8 border border-outline-variant/10 mb-8">
       <div className="flex flex-col md:flex-row gap-6 items-start md:items-center">
@@ -54,15 +59,19 @@ export default function ProfileHeader({
           <div className="flex flex-wrap gap-4 text-sm">
             <div className="flex items-center gap-2 text-on-surface-variant">
               <MapPin className="w-4 h-4" />
-              <span>{school}</span>
+              <span>{school || 'N/A'}</span>
             </div>
             <div className="flex items-center gap-2 text-on-surface-variant">
               <Building2 className="w-4 h-4" />
-              <span>{department}</span>
+              <span>{facultyName}</span>
+            </div>
+            <div className="flex items-center gap-2 text-on-surface-variant">
+              <Building2 className="w-4 h-4" />
+              <span>{departmentName}</span>
             </div>
             <div className="flex items-center gap-2 text-on-surface-variant">
               <GraduationCap className="w-4 h-4" />
-              <span>{current_level}</span>
+              <span>{levelDisplay}</span>
             </div>
           </div>
         </div>
