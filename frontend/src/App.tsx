@@ -7,6 +7,7 @@ import Resources from './pages/Resources';
 import Profile from './pages/Profile';
 import Settings from './pages/Settings';
 import CatalogueOverview from './pages/CatalogueOverview';
+import LearningSession from './pages/LearningSession';
 
 function App() {
   return (
@@ -20,6 +21,7 @@ function App() {
         <Route path="/profile" element={<Profile />} />
         <Route path="/settings" element={<Settings />} />
         <Route path="/catalogue/:id" element={<CatalogueOverview />} />
+        <Route path="/learn/:catalogueId/:topicId/:subtopicId" element={<LearningSession />} />
         <Route path="/" element={<Navigate to="/dashboard" replace />} />
       </Routes>
     </BrowserRouter>
