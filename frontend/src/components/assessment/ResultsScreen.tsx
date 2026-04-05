@@ -32,7 +32,6 @@ export default function ResultsScreen({
   questions,
   userAnswers,
   onRetake,
-  onReviewAnswers,
   onReturnToCatalogue,
 }: ResultsScreenProps) {
   const [showReview, setShowReview] = useState(false);

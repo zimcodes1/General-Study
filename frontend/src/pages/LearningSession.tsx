@@ -10,7 +10,7 @@ type ViewMode = 'content' | 'quiz' | 'completion';
 
 export default function LearningSession() {
   const navigate = useNavigate();
-  const { catalogueId, topicId, subtopicId } = useParams();
+  const { catalogueId } = useParams();
   
   const [currentSubtopicIndex, setCurrentSubtopicIndex] = useState(0);
   const [viewMode, setViewMode] = useState<ViewMode>('content');
