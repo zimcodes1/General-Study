@@ -1,10 +1,30 @@
 import { Search, Bell, Menu } from 'lucide-react';
+import { auth } from '../../utils/auth';
+import { useEffect, useState } from 'react';
 
 interface TopbarProps {
   onMenuClick: () => void;
 }
 
 export default function Topbar({ onMenuClick }: TopbarProps) {
+  const [user, setUser] = useState<any>(null);
+
+  useEffect(() => {
+    const userData = auth.getUser();
+    setUser(userData);
+  }, []);
+
+  const getInitials = (name: string) => {
+    if (!name) return 'U';
+    const names = name.split(' ');
+    if (names.length >= 2) {
+      return (names[0][0] + names[names.length - 1][0]).toUpperCase();
+    }
+    return name.substring(0, 2).toUpperCase();
+  };
+
+  const firstName = user?.full_name?.split(' ')[0] || 'User';
+
   return (
     <header className="sticky top-0 z-30 bg-surface-container-low/60 backdrop-blur-[40px] border-b border-outline-variant/15">
       <div className="flex items-center justify-between px-4 lg:px-8 py-4">
@@ -34,11 +54,11 @@ export default function Topbar({ onMenuClick }: TopbarProps) {
 
           <div className="flex items-center gap-3 pl-4 border-l border-outline-variant/20">
             <div className="hidden sm:block text-right">
-              <p className="text-sm font-semibold text-on-surface">Sarah Chen</p>
-              <p className="text-xs text-on-surface-variant">Computer Science</p>
+              <p className="text-sm font-semibold text-on-surface">{user?.full_name || 'User'}</p>
+              <p className="text-xs text-on-surface-variant">{user?.department || 'Student'}</p>
             </div>
             <div className="w-10 h-10 rounded-full bg-gradient-to-br from-primary to-secondary flex items-center justify-center text-on-primary-fixed font-bold text-sm">
-              SC
+              {user ? getInitials(user.full_name) : 'U'}
             </div>
           </div>
         </div>

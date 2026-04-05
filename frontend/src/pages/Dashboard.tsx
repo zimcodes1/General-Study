@@ -1,12 +1,21 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import Sidebar from '../components/dashboard/Sidebar';
 import Topbar from '../components/dashboard/Topbar';
 import StatCard from '../components/dashboard/StatCard';
 import ResourceGrid from '../components/dashboard/ResourceGrid';
 import { BookOpen, Clock, TrendingUp, Award } from 'lucide-react';
+import { auth } from '../utils/auth';
 
 export default function Dashboard() {
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [user, setUser] = useState<any>(null);
+
+  useEffect(() => {
+    const userData = auth.getUser();
+    setUser(userData);
+  }, []);
+
+  const firstName = user?.full_name?.split(' ')[0] || 'User';
 
   const stats = [
     { icon: BookOpen, label: 'Active Catalogues', value: '8', change: '+2', trend: 'up' as const },
@@ -118,7 +127,7 @@ export default function Dashboard() {
         <main className="flex-1 px-4 lg:px-8 py-8">
           <div className="mb-8">
             <h1 className="text-3xl lg:text-4xl font-bold text-on-surface mb-2 tracking-tight">
-              Welcome back, Sarah
+              Welcome back, {firstName}
             </h1>
             <p className="text-on-surface-variant">Continue your learning journey</p>
           </div>
