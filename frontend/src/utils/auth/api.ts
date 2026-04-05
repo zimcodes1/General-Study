@@ -115,4 +115,22 @@ export const authAPI = {
     }
     return response.json();
   },
+
+  updateProfile: async (data: any, accessToken: string): Promise<AuthResponse['user']> => {
+    const response = await fetch(`${API_BASE_URL}/users/update/`, {
+      method: 'PUT',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${accessToken}`,
+      },
+      body: JSON.stringify(data),
+    });
+
+    if (!response.ok) {
+      const error = await response.json();
+      throw new Error(error.error || 'Profile update failed');
+    }
+
+    return response.json();
+  },
 };
