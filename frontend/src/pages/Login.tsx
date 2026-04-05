@@ -1,9 +1,37 @@
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { Mail, Lock, Zap } from "lucide-react";
 import Google from "../components/svgs/Google";
-import { useEffect } from "react";
+import { useEffect, useState, type FormEvent } from "react";
+import { auth } from "../utils/auth";
 
 export default function Login() {
+	const navigate = useNavigate();
+	const [formData, setFormData] = useState({
+		email: "",
+		password: "",
+	});
+	const [loading, setLoading] = useState(false);
+	const [error, setError] = useState("");
+
+	const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+		setFormData({ ...formData, [e.target.name]: e.target.value });
+	};
+
+	const handleSubmit = async (e: FormEvent) => {
+		e.preventDefault();
+		setError("");
+		setLoading(true);
+
+		try {
+			await auth.login(formData);
+			navigate("/dashboard");
+		} catch (err: any) {
+			setError(err.message || "Login failed. Please try again.");
+		} finally {
+			setLoading(false);
+		}
+	};
+
 	useEffect(() => {
 		document.title = "Login - General Study";
 	}, []);
@@ -24,7 +52,12 @@ export default function Login() {
 				</div>
 
 				<div className="bg-surface-container-low/60 backdrop-blur-[40px] rounded-3xl p-8 border border-outline-variant/15">
-					<form className="space-y-6">
+					{error && (
+						<div className="mb-4 p-3 bg-red-500/10 border border-red-500/20 rounded-xl text-red-500 text-sm">
+							{error}
+						</div>
+					)}
+					<form className="space-y-6" onSubmit={handleSubmit}>
 						<div>
 							<label className="block text-on-surface-variant text-xs uppercase tracking-wider mb-3 font-jakarta">
 								Email Address
@@ -33,7 +66,11 @@ export default function Login() {
 								<Mail className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-on-surface-variant" />
 								<input
 									type="email"
+									name="email"
+									value={formData.email}
+									onChange={handleChange}
 									placeholder="name@example.com"
+									required
 									className="w-full bg-surface-container-low rounded-xl pl-12 pr-4 py-3.5 text-on-surface placeholder:text-on-surface-variant/50 focus:bg-surface-container-high focus:outline-none focus:ring-2 focus:ring-tertiary/30 transition-all"
 								/>
 							</div>
@@ -55,7 +92,11 @@ export default function Login() {
 								<Lock className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-on-surface-variant" />
 								<input
 									type="password"
+									name="password"
+									value={formData.password}
+									onChange={handleChange}
 									placeholder="••••••••"
+									required
 									className="w-full bg-surface-container-low rounded-xl pl-12 pr-4 py-3.5 text-on-surface placeholder:text-on-surface-variant/50 focus:bg-surface-container-high focus:outline-none focus:ring-2 focus:ring-tertiary/30 transition-all"
 								/>
 							</div>
@@ -63,9 +104,10 @@ export default function Login() {
 
 						<button
 							type="submit"
-							className="w-full bg-gradient-to-r from-primary to-secondary text-on-primary-fixed font-semibold py-4 rounded-full hover:shadow-[0_0_40px_rgba(155,168,255,0.3)] transition-all duration-300 flex items-center justify-center gap-2 font-jakarta"
+							disabled={loading}
+							className="w-full bg-gradient-to-r from-primary to-secondary text-on-primary-fixed font-semibold py-4 rounded-full hover:shadow-[0_0_40px_rgba(155,168,255,0.3)] transition-all duration-300 flex items-center justify-center gap-2 font-jakarta disabled:opacity-50 disabled:cursor-not-allowed"
 						>
-							Login & Continue
+							{loading ? "Logging in..." : "Login & Continue"}
 							<Zap className="w-5 h-5 fill-current" />
 						</button>
 					</form>

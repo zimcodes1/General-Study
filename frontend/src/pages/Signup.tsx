@@ -1,4 +1,4 @@
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import {
 	User,
 	Mail,
@@ -8,10 +8,24 @@ import {
 	Lock,
 	Zap,
 } from "lucide-react";
-import { useState, useEffect } from "react";
+import { useState, useEffect, type FormEvent } from "react";
+import { auth, type RegisterData } from "../utils/auth";
 
 export default function Signup() {
+	const navigate = useNavigate();
 	const [password, setPassword] = useState("");
+	const [confirmPassword, setConfirmPassword] = useState("");
+	const [formData, setFormData] = useState({
+		full_name: "",
+		email: "",
+		phone: "",
+		school: "",
+		department: "",
+		degree_level: "",
+		current_level: "",
+	});
+	const [loading, setLoading] = useState(false);
+	const [error, setError] = useState("");
 
 	const getPasswordStrength = (pass: string) => {
 		if (pass.length === 0) return { strength: 0, label: "" };
@@ -22,10 +36,48 @@ export default function Signup() {
 
 	const { strength, label } = getPasswordStrength(password);
 
-//Set page title
-useEffect((()=>{
-  document.title = "Sign Up - General Study";
-}))
+	const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
+		setFormData({ ...formData, [e.target.name]: e.target.value });
+	};
+
+	const handleSubmit = async (e: FormEvent) => {
+		e.preventDefault();
+		setError("");
+
+		if (password !== confirmPassword) {
+			setError("Passwords do not match");
+			return;
+		}
+
+		if (password.length < 8) {
+			setError("Password must be at least 8 characters");
+			return;
+		}
+
+		if (!formData.degree_level || !formData.current_level) {
+			setError("Please select both degree level and current level");
+			return;
+		}
+
+		setLoading(true);
+
+		try {
+			const registerData: RegisterData = {
+				...formData,
+				password,
+			};
+			await auth.register(registerData);
+			navigate("/dashboard");
+		} catch (err: any) {
+			setError(err.message || "Registration failed. Please try again.");
+		} finally {
+			setLoading(false);
+		}
+	};
+
+	useEffect(() => {
+		document.title = "Sign Up - General Study";
+	}, []);
 	return (
 		<div className="min-h-screen bg-surface flex items-center justify-center px-4 py-12 relative">
 			<div className="w-full max-w-2xl">
@@ -45,13 +97,22 @@ useEffect((()=>{
 				</div>
 
 				<div className="bg-surface-container-low/60 backdrop-blur-[40px] rounded-3xl p-8 border border-outline-variant/15">
-					<form className="space-y-5">
+					{error && (
+						<div className="mb-4 p-3 bg-red-500/10 border border-red-500/20 rounded-xl text-red-500 text-sm">
+							{error}
+						</div>
+					)}
+					<form className="space-y-5" onSubmit={handleSubmit}>
 						<div>
 							<div className="relative">
 								<User className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-on-surface-variant" />
 								<input
 									type="text"
+									name="full_name"
+									value={formData.full_name}
+									onChange={handleChange}
 									placeholder="Full Name"
+									required
 									className="w-full bg-surface-container-low rounded-xl pl-12 pr-4 py-3.5 text-on-surface placeholder:text-on-surface-variant/50 focus:bg-surface-container-high focus:outline-none focus:ring-2 focus:ring-tertiary/30 transition-all"
 								/>
 							</div>
@@ -62,7 +123,11 @@ useEffect((()=>{
 								<Mail className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-on-surface-variant" />
 								<input
 									type="email"
+									name="email"
+									value={formData.email}
+									onChange={handleChange}
 									placeholder="Email Address"
+									required
 									className="w-full bg-surface-container-low rounded-xl pl-12 pr-4 py-3.5 text-on-surface placeholder:text-on-surface-variant/50 focus:bg-surface-container-high focus:outline-none focus:ring-2 focus:ring-tertiary/30 transition-all"
 								/>
 							</div>
@@ -73,6 +138,9 @@ useEffect((()=>{
 								<Phone className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-on-surface-variant" />
 								<input
 									type="tel"
+									name="phone"
+									value={formData.phone}
+									onChange={handleChange}
 									placeholder="Phone Number"
 									className="w-full bg-surface-container-low rounded-xl pl-12 pr-4 py-3.5 text-on-surface placeholder:text-on-surface-variant/50 focus:bg-surface-container-high focus:outline-none focus:ring-2 focus:ring-tertiary/30 transition-all"
 								/>
@@ -81,29 +149,61 @@ useEffect((()=>{
 								<GraduationCap className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-on-surface-variant" />
 								<input
 									type="text"
+									name="school"
+									value={formData.school}
+									onChange={handleChange}
 									placeholder="School"
+									required
 									className="w-full bg-surface-container-low rounded-xl pl-12 pr-4 py-3.5 text-on-surface placeholder:text-on-surface-variant/50 focus:bg-surface-container-high focus:outline-none focus:ring-2 focus:ring-tertiary/30 transition-all"
 								/>
 							</div>
 						</div>
 
+						<div className="relative">
+							<Building2 className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-on-surface-variant" />
+							<input
+								type="text"
+								name="department"
+								value={formData.department}
+								onChange={handleChange}
+								placeholder="Department"
+								required
+								className="w-full bg-surface-container-low rounded-xl pl-12 pr-4 py-3.5 text-on-surface placeholder:text-on-surface-variant/50 focus:bg-surface-container-high focus:outline-none focus:ring-2 focus:ring-tertiary/30 transition-all"
+							/>
+						</div>
+
 						<div className="grid grid-cols-1 md:grid-cols-2 gap-4">
 							<div className="relative">
-								<Building2 className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-on-surface-variant" />
-								<select className="w-full bg-surface-container-low rounded-xl pl-12 pr-4 py-3.5 text-on-surface-variant appearance-none focus:bg-surface-container-high focus:outline-none focus:ring-2 focus:ring-tertiary/30 transition-all">
-									<option>Department</option>
-									<option>Computer Science</option>
-									<option>Engineering</option>
-									<option>Business</option>
+								<GraduationCap className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-on-surface-variant" />
+								<select
+									name="degree_level"
+									value={formData.degree_level}
+									onChange={handleChange}
+									required
+									className="w-full bg-surface-container-low rounded-xl pl-12 pr-4 py-3.5 text-on-surface appearance-none focus:bg-surface-container-high focus:outline-none focus:ring-2 focus:ring-tertiary/30 transition-all"
+								>
+									<option value="">Degree Level</option>
+									<option value="undergraduate">Undergraduate</option>
+									<option value="graduate">Graduate</option>
+									<option value="postgraduate">Postgraduate</option>
 								</select>
 							</div>
 							<div className="relative">
 								<GraduationCap className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-on-surface-variant" />
-								<select className="w-full bg-surface-container-low rounded-xl pl-12 pr-4 py-3.5 text-on-surface-variant appearance-none focus:bg-surface-container-high focus:outline-none focus:ring-2 focus:ring-tertiary/30 transition-all">
-									<option>Level</option>
-									<option>Undergraduate</option>
-									<option>Graduate</option>
-									<option>PhD</option>
+								<select
+									name="current_level"
+									value={formData.current_level}
+									onChange={handleChange}
+									required
+									className="w-full bg-surface-container-low rounded-xl pl-12 pr-4 py-3.5 text-on-surface appearance-none focus:bg-surface-container-high focus:outline-none focus:ring-2 focus:ring-tertiary/30 transition-all"
+								>
+									<option value="">Current Level</option>
+									<option value="100">100 Level</option>
+									<option value="200">200 Level</option>
+									<option value="300">300 Level</option>
+									<option value="400">400 Level</option>
+									<option value="500">500 Level</option>
+									<option value="600">600 Level</option>
 								</select>
 							</div>
 						</div>
@@ -145,7 +245,10 @@ useEffect((()=>{
 								<Lock className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-on-surface-variant" />
 								<input
 									type="password"
+									value={confirmPassword}
+									onChange={(e) => setConfirmPassword(e.target.value)}
 									placeholder="Confirm Password"
+									required
 									className="w-full bg-surface-container-low rounded-xl pl-12 pr-4 py-3.5 text-on-surface placeholder:text-on-surface-variant/50 focus:bg-surface-container-high focus:outline-none focus:ring-2 focus:ring-tertiary/30 transition-all"
 								/>
 							</div>
@@ -181,9 +284,10 @@ useEffect((()=>{
 
 						<button
 							type="submit"
-							className="w-full bg-gradient-to-r from-primary to-secondary text-on-primary-fixed font-semibold py-4 rounded-full hover:shadow-[0_0_40px_rgba(155,168,255,0.3)] transition-all duration-300 flex items-center justify-center gap-2 font-jakarta"
+							disabled={loading}
+							className="w-full bg-gradient-to-r from-primary to-secondary text-on-primary-fixed font-semibold py-4 rounded-full hover:shadow-[0_0_40px_rgba(155,168,255,0.3)] transition-all duration-300 flex items-center justify-center gap-2 font-jakarta disabled:opacity-50 disabled:cursor-not-allowed"
 						>
-							Create Account
+							{loading ? "Creating Account..." : "Create Account"}
 							<Zap className="w-5 h-5 fill-current" />
 						</button>
 					</form>
