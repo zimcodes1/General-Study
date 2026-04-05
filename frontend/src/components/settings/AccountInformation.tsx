@@ -3,7 +3,7 @@ import { useState, useEffect } from 'react';
 import { auth, authAPI, type Faculty, type Department } from '../../utils/auth';
 
 interface AccountInformationProps {
-  onChange: () => void;
+  onChange: (data: any) => void;
 }
 
 export default function AccountInformation({ onChange }: AccountInformationProps) {
@@ -67,14 +67,18 @@ export default function AccountInformation({ onChange }: AccountInformationProps
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
     
+    const updatedData = { ...formData, [name]: value };
+    
     if (name === 'faculty_id' && value) {
-      setFormData({ ...formData, faculty_id: value, department_id: '' });
+      updatedData.department_id = '';
+      setFormData(updatedData);
       setDepartments([]);
       loadDepartments(value);
     } else {
-      setFormData({ ...formData, [name]: value });
+      setFormData(updatedData);
     }
-    onChange();
+    
+    onChange(updatedData);
   };
 
   return (
