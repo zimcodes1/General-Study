@@ -9,6 +9,7 @@ import Settings from './pages/Settings';
 import CatalogueOverview from './pages/CatalogueOverview';
 import LearningSession from './pages/LearningSession';
 import Assessment from './pages/Assessment';
+import AdminPanel from './pages/AdminPanel';
 
 function App() {
   return (
@@ -24,6 +25,7 @@ function App() {
         <Route path="/catalogue/:id" element={<CatalogueOverview />} />
         <Route path="/learn/:catalogueId/:topicId/:subtopicId" element={<LearningSession />} />
         <Route path="/assessment/:catalogueId/:mode" element={<Assessment />} />
+        <Route path="/admin" element={<AdminPanel />} />
         <Route path="/" element={<Navigate to="/dashboard" replace />} />
       </Routes>
     </BrowserRouter>
