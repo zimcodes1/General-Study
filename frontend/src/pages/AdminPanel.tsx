@@ -4,7 +4,6 @@ import AdminStats from '../components/admin/AdminStats';
 import ResourceModeration from '../components/admin/ResourceModeration';
 import ReportsManagement from '../components/admin/ReportsManagement';
 import UserManagement from '../components/admin/UserManagement';
-import { Filter } from 'lucide-react';
 
 type FilterType = 'all' | 'pending' | 'approved' | 'rejected';
 
