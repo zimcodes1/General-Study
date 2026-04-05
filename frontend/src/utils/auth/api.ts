@@ -1,11 +1,24 @@
 const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000/api';
 
+export interface Faculty {
+  id: string;
+  name: string;
+}
+
+export interface Department {
+  id: string;
+  name: string;
+  faculty_id: string;
+  faculty_name: string;
+}
+
 export interface RegisterData {
   full_name: string;
   email: string;
   phone: string;
   school: string;
-  department: string;
+  faculty_id: string;
+  department_id: string;
   degree_level: string;
   current_level: string;
   password: string;
@@ -23,7 +36,8 @@ export interface AuthResponse {
     full_name: string;
     phone: string;
     school: string;
-    department: string;
+    faculty: Faculty;
+    department: Department;
     degree_level: string;
     current_level: string;
     courses: string[];
@@ -80,6 +94,25 @@ export const authAPI = {
       throw new Error('Token refresh failed');
     }
 
+    return response.json();
+  },
+
+  getFaculties: async (): Promise<Faculty[]> => {
+    const response = await fetch(`${API_BASE_URL}/users/faculties/`);
+    if (!response.ok) {
+      throw new Error('Failed to fetch faculties');
+    }
+    return response.json();
+  },
+
+  getDepartments: async (facultyId?: string): Promise<Department[]> => {
+    const url = facultyId 
+      ? `${API_BASE_URL}/users/departments/?faculty_id=${facultyId}`
+      : `${API_BASE_URL}/users/departments/`;
+    const response = await fetch(url);
+    if (!response.ok) {
+      throw new Error('Failed to fetch departments');
+    }
     return response.json();
   },
 };

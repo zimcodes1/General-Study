@@ -9,7 +9,7 @@ import {
 	Zap,
 } from "lucide-react";
 import { useState, useEffect, type FormEvent } from "react";
-import { auth, type RegisterData } from "../utils/auth";
+import { auth, type RegisterData, authAPI, type Faculty, type Department } from "../utils/auth";
 
 export default function Signup() {
 	const navigate = useNavigate();
@@ -20,12 +20,16 @@ export default function Signup() {
 		email: "",
 		phone: "",
 		school: "",
-		department: "",
+		faculty_id: "",
+		department_id: "",
 		degree_level: "",
 		current_level: "",
 	});
 	const [loading, setLoading] = useState(false);
 	const [error, setError] = useState("");
+	const [faculties, setFaculties] = useState<Faculty[]>([]);
+	const [departments, setDepartments] = useState<Department[]>([]);
+	const [loadingDepartments, setLoadingDepartments] = useState(false);
 
 	const getPasswordStrength = (pass: string) => {
 		if (pass.length === 0) return { strength: 0, label: "" };
@@ -36,8 +40,42 @@ export default function Signup() {
 
 	const { strength, label } = getPasswordStrength(password);
 
+	useEffect(() => {
+		document.title = "Sign Up - General Study";
+		loadFaculties();
+	}, []);
+
+	const loadFaculties = async () => {
+		try {
+			const data = await authAPI.getFaculties();
+			setFaculties(data);
+		} catch (err) {
+			console.error('Failed to load faculties:', err);
+		}
+	};
+
+	const loadDepartments = async (facultyId: string) => {
+		setLoadingDepartments(true);
+		try {
+			const data = await authAPI.getDepartments(facultyId);
+			setDepartments(data);
+		} catch (err) {
+			console.error('Failed to load departments:', err);
+		} finally {
+			setLoadingDepartments(false);
+		}
+	};
+
 	const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
-		setFormData({ ...formData, [e.target.name]: e.target.value });
+		const { name, value } = e.target;
+
+		if (name === 'faculty_id' && value) {
+			setFormData({ ...formData, faculty_id: value, department_id: '' });
+			setDepartments([]);
+			loadDepartments(value);
+		} else {
+			setFormData({ ...formData, [name]: value });
+		}
 	};
 
 	const handleSubmit = async (e: FormEvent) => {
@@ -54,8 +92,8 @@ export default function Signup() {
 			return;
 		}
 
-		if (!formData.degree_level || !formData.current_level) {
-			setError("Please select both degree level and current level");
+		if (!formData.faculty_id || !formData.department_id || !formData.degree_level || !formData.current_level) {
+			setError("Please fill all required fields");
 			return;
 		}
 
@@ -75,9 +113,6 @@ export default function Signup() {
 		}
 	};
 
-	useEffect(() => {
-		document.title = "Sign Up - General Study";
-	}, []);
 	return (
 		<div className="min-h-screen bg-surface flex items-center justify-center px-4 py-12 relative">
 			<div className="w-full max-w-2xl">
@@ -159,17 +194,44 @@ export default function Signup() {
 							</div>
 						</div>
 
-						<div className="relative">
-							<Building2 className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-on-surface-variant" />
-							<input
-								type="text"
-								name="department"
-								value={formData.department}
-								onChange={handleChange}
-								placeholder="Department"
-								required
-								className="w-full bg-surface-container-low rounded-xl pl-12 pr-4 py-3.5 text-on-surface placeholder:text-on-surface-variant/50 focus:bg-surface-container-high focus:outline-none focus:ring-2 focus:ring-tertiary/30 transition-all"
-							/>
+						<div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+							<div className="relative">
+								<Building2 className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-on-surface-variant" />
+								<select
+									name="faculty_id"
+									value={formData.faculty_id}
+									onChange={handleChange}
+									required
+									className="w-full bg-surface-container-low rounded-xl pl-12 pr-4 py-3.5 text-on-surface appearance-none focus:bg-surface-container-high focus:outline-none focus:ring-2 focus:ring-tertiary/30 transition-all"
+								>
+									<option value="">Select Faculty</option>
+									{faculties.map((faculty) => (
+										<option key={faculty.id} value={faculty.id}>
+											{faculty.name}
+										</option>
+									))}
+								</select>
+							</div>
+							<div className="relative">
+								<Building2 className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-on-surface-variant" />
+								<select
+									name="department_id"
+									value={formData.department_id}
+									onChange={handleChange}
+									required
+									disabled={!formData.faculty_id || loadingDepartments}
+									className="w-full bg-surface-container-low rounded-xl pl-12 pr-4 py-3.5 text-on-surface appearance-none focus:bg-surface-container-high focus:outline-none focus:ring-2 focus:ring-tertiary/30 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+								>
+									<option value="">
+										{loadingDepartments ? 'Loading...' : 'Select Department'}
+									</option>
+									{departments.map((dept) => (
+										<option key={dept.id} value={dept.id}>
+											{dept.name}
+										</option>
+									))}
+								</select>
+							</div>
 						</div>
 
 						<div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -216,6 +278,7 @@ export default function Signup() {
 									placeholder="Password"
 									value={password}
 									onChange={(e) => setPassword(e.target.value)}
+									required
 									className="w-full bg-surface-container-low rounded-xl pl-12 pr-4 py-3.5 text-on-surface placeholder:text-on-surface-variant/50 focus:bg-surface-container-high focus:outline-none focus:ring-2 focus:ring-tertiary/30 transition-all"
 								/>
 							</div>
@@ -258,6 +321,7 @@ export default function Signup() {
 							<input
 								type="checkbox"
 								id="terms"
+								required
 								className="mt-1 w-4 h-4 accent-[#a7aaba] rounded border-outline-variant bg-surface-container-low focus:ring-2 focus:ring-tertiary/30"
 							/>
 							<label
