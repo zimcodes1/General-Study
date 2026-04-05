@@ -1,21 +1,31 @@
 import { Edit2, MapPin, GraduationCap, Building2 } from 'lucide-react';
+import { Link } from 'react-router-dom';
 
 interface ProfileHeaderProps {
-  name: string;
+  full_name: string;
   email: string;
   school: string;
   department: string;
-  level: string;
+  current_level: string;
   avatar?: string;
   onEdit: () => void;
 }
 
+const getInitials = (name: string) => {
+  if (!name) return "U";
+  const names = name.split(" ");
+  if (names.length >= 2) {
+    return (names[0][0] + names[names.length - 1][0]).toUpperCase();
+  }
+  return name.substring(0, 2).toUpperCase();
+};
+
 export default function ProfileHeader({
-  name,
+  full_name,
   email,
   school,
   department,
-  level,
+  current_level,
   avatar,
   onEdit,
 }: ProfileHeaderProps) {
@@ -26,19 +36,19 @@ export default function ProfileHeader({
           {avatar ? (
             <img
               src={avatar}
-              alt={name}
+              alt={full_name}
               className="w-24 h-24 rounded-2xl object-cover border-2 border-outline-variant/20"
             />
           ) : (
             <div className="w-24 h-24 rounded-2xl bg-gradient-to-br from-primary to-secondary flex items-center justify-center text-on-primary-fixed text-3xl font-bold">
-              {name.split(' ').map(n => n[0]).join('').toUpperCase()}
+              {getInitials(full_name)}
             </div>
           )}
           <div className="absolute -bottom-2 -right-2 w-8 h-8 bg-tertiary rounded-full border-4 border-surface-container-low"></div>
         </div>
 
         <div className="flex-1">
-          <h1 className="text-3xl font-bold text-on-surface mb-1 tracking-tight">{name}</h1>
+          <h1 className="text-3xl font-bold text-on-surface mb-1 tracking-tight">{full_name}</h1>
           <p className="text-on-surface-variant mb-4">{email}</p>
 
           <div className="flex flex-wrap gap-4 text-sm">
@@ -52,18 +62,19 @@ export default function ProfileHeader({
             </div>
             <div className="flex items-center gap-2 text-on-surface-variant">
               <GraduationCap className="w-4 h-4" />
-              <span>{level}</span>
+              <span>{current_level}</span>
             </div>
           </div>
         </div>
 
-        <button
+        <Link
+          to='/settings'
           onClick={onEdit}
           className="flex items-center gap-2 px-6 py-3 bg-surface-container-high rounded-full text-on-surface hover:bg-surface-container-highest transition-all border border-outline-variant/10 font-jakarta text-sm"
         >
           <Edit2 className="w-4 h-4" />
           Edit Profile
-        </button>
+        </Link>
       </div>
     </div>
   );

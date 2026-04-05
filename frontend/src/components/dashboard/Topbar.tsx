@@ -1,6 +1,7 @@
 import { Search, Bell, Menu } from 'lucide-react';
 import { auth } from '../../utils/auth';
 import { useEffect, useState } from 'react';
+import { Link } from 'react-router-dom';
 
 interface TopbarProps {
   onMenuClick: () => void;
@@ -57,9 +58,9 @@ export default function Topbar({ onMenuClick }: TopbarProps) {
               <p className="text-sm font-semibold text-on-surface">{user?.full_name || 'User'}</p>
               <p className="text-xs text-on-surface-variant">{user?.department || 'Student'}</p>
             </div>
-            <div className="w-10 h-10 rounded-full bg-gradient-to-br from-primary to-secondary flex items-center justify-center text-on-primary-fixed font-bold text-sm">
+            <Link to='/profile' className="w-10 h-10 rounded-full bg-gradient-to-br from-primary to-secondary flex items-center justify-center text-on-primary-fixed font-bold text-sm">
               {user ? getInitials(user.full_name) : 'U'}
-            </div>
+            </Link>
           </div>
         </div>
       </div>
