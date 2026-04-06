@@ -24,7 +24,6 @@ export default function Topbar({ onMenuClick }: TopbarProps) {
     return name.substring(0, 2).toUpperCase();
   };
 
-  const firstName = user?.full_name?.split(' ')[0] || 'User';
 
   return (
     <header className="sticky top-0 z-30 bg-surface-container-low/60 backdrop-blur-[40px] border-b border-outline-variant/15">
