@@ -28,7 +28,7 @@ interface ResourceCardProps {
 	onRemove?: () => void;
 }
 
-const getFileTypeMeta = (fileType: ResourceFileType) => {
+export const getFileTypeMeta = (fileType: ResourceFileType) => {
 	let label = "FILE";
 	let icon: ElementType = File;
 	let className = "text-on-surface-variant bg-surface-container border-outline-variant/20";

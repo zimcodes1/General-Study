@@ -193,6 +193,7 @@ class ResourceDetailSerializer(serializers.ModelSerializer):
             'department_name',
             'level',
             'file_type',
+            'cover_image',
             'attribution',
             'status',
             'processing_error',
