@@ -1,8 +1,43 @@
-import { useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import DashboardLayout from '../components/dashboard/DashboardLayout';
-import ResourceCard from '../components/dashboard/ResourceCard';
+import ResourceCard, { type ResourceFileType } from '../components/dashboard/ResourceCard';
 import ResourceUploadModal from '../components/resources/ResourceUploadModal';
 import { Search, SlidersHorizontal, Upload, X } from 'lucide-react';
+import { auth, authAPI, tokenStorage, type Department } from '../utils/auth';
+
+type ResourceListItem = {
+  id: string;
+  title: string;
+  course_code?: string | null;
+  course_name?: string | null;
+  faculty_name?: string | null;
+  department_name?: string | null;
+  level?: string | null;
+  file_type?: string | null;
+  rating_avg?: number | null;
+  rating_count?: number;
+  created_at?: string;
+};
+
+const PAGE_SIZE = 16;
+
+const normalizeFileType = (fileType?: string | null): ResourceFileType => {
+  if (!fileType) return 'other';
+  const normalized = fileType.toLowerCase();
+  if (
+    ['pdf', 'doc', 'docx', 'ppt', 'pptx', 'txt', 'image', 'document', 'other'].includes(
+      normalized
+    )
+  ) {
+    return normalized as ResourceFileType;
+  }
+  return 'other';
+};
+
+const formatLevel = (level?: string | null) => {
+  if (!level) return undefined;
+  return `${level} Level`;
+};
 
 export default function Resources() {
   const [searchQuery, setSearchQuery] = useState('');
@@ -11,151 +46,134 @@ export default function Resources() {
   const [selectedLevel, setSelectedLevel] = useState('all');
   const [selectedCourse, setSelectedCourse] = useState('all');
   const [showUploadModal, setShowUploadModal] = useState(false);
+  const [resources, setResources] = useState<ResourceListItem[]>([]);
+  const [loadingResources, setLoadingResources] = useState(true);
+  const [resourceError, setResourceError] = useState<string | null>(null);
+  const [availableDepartments, setAvailableDepartments] = useState<Department[]>([]);
+  const [loadingDepartments, setLoadingDepartments] = useState(false);
+  const [visibleCount, setVisibleCount] = useState(PAGE_SIZE);
 
-  const departments = ['All Departments', 'Computer Science', 'Engineering', 'Business', 'Mathematics'];
-  const levels = ['All Levels', 'Beginner', 'Intermediate', 'Advanced'];
-  const courses = ['All Courses', 'CSC 201', 'CSC 301', 'CSC 305', 'CSC 310', 'CSC 401', 'CSC 405'];
+  const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:8000/api';
+  const user = auth.getUser();
+  const userFacultyName = user?.faculty?.name;
+  const userFacultyId = user?.faculty?.id;
 
-  const allResources = [
-    {
-      id: '1',
-      title: 'Introduction to Machine Learning',
-      type: 'pdf' as const,
-      subject: 'Artificial Intelligence',
-      courseCode: 'CSC 201',
-      rating: 4.8,
-      department: 'Computer Science',
-      level: 'Advanced',
-      thumbnail: '/images/ml.png',
-    },
-    {
-      id: '2',
-      title: 'Data Structures & Algorithms',
-      type: 'pdf' as const,
-      subject: 'Programming',
-      courseCode: 'CSC 301',
-      rating: 4.9,
-      department: 'Computer Science',
-      level: 'Intermediate',
-    },
-    {
-      id: '3',
-      title: 'Neural Networks Deep Dive',
-      type: 'document' as const,
-      subject: 'AI & ML',
-      courseCode: 'CSC 401',
-      rating: 4.7,
-      department: 'Computer Science',
-      level: 'Advanced',
-    },
-    {
-      id: '4',
-      title: 'Advanced Python Programming',
-      type: 'pdf' as const,
-      subject: 'Programming',
-      courseCode: 'CSC 305',
-      rating: 4.8,
-      department: 'Computer Science',
-      level: 'Advanced',
-    },
-    {
-      id: '5',
-      title: 'Database Design Principles',
-      type: 'pdf' as const,
-      subject: 'Database Systems',
-      courseCode: 'CSC 310',
-      rating: 4.5,
-      department: 'Computer Science',
-      level: 'Intermediate',
-    },
-    {
-      id: '6',
-      title: 'Web Development Fundamentals',
-      type: 'document' as const,
-      subject: 'Web Development',
-      courseCode: 'CSC 205',
-      rating: 4.7,
-      department: 'Computer Science',
-      level: 'Beginner',
-    },
-    {
-      id: '7',
-      title: 'Cloud Computing Essentials',
-      type: 'pdf' as const,
-      subject: 'Cloud Computing',
-      courseCode: 'CSC 405',
-      rating: 4.6,
-      department: 'Computer Science',
-      level: 'Advanced',
-    },
-    {
-      id: '8',
-      title: 'Cybersecurity Best Practices',
-      type: 'pdf' as const,
-      subject: 'Security',
-      courseCode: 'CSC 320',
-      rating: 4.9,
-      department: 'Computer Science',
-      level: 'Intermediate',
-    },
-    {
-      id: '9',
-      title: 'Mobile App Development',
-      type: 'document' as const,
-      subject: 'Mobile Development',
-      courseCode: 'CSC 315',
-      rating: 4.4,
-      department: 'Computer Science',
-      level: 'Intermediate',
-    },
-    {
-      id: '10',
-      title: 'Software Engineering Principles',
-      type: 'pdf' as const,
-      subject: 'Software Engineering',
-      courseCode: 'CSC 410',
-      rating: 4.7,
-      department: 'Computer Science',
-      level: 'Advanced',
-    },
-    {
-      id: '11',
-      title: 'Operating Systems Concepts',
-      type: 'pdf' as const,
-      subject: 'Systems',
-      courseCode: 'CSC 305',
-      rating: 4.6,
-      department: 'Computer Science',
-      level: 'Intermediate',
-    },
-    {
-      id: '12',
-      title: 'Computer Networks',
-      type: 'document' as const,
-      subject: 'Networking',
-      courseCode: 'CSC 320',
-      rating: 4.5,
-      department: 'Computer Science',
-      level: 'Intermediate',
-    },
-  ];
+  useEffect(() => {
+    const loadResources = async () => {
+      setLoadingResources(true);
+      setResourceError(null);
+      try {
+        const accessToken = tokenStorage.getAccessToken();
+        const response = await fetch(`${apiUrl}/resources/`, {
+          headers: accessToken ? { Authorization: `Bearer ${accessToken}` } : undefined,
+        });
 
-  const filteredResources = allResources.filter((resource) => {
-    const matchesSearch =
-      searchQuery === '' ||
-      resource.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      resource.subject.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      resource.courseCode.toLowerCase().includes(searchQuery.toLowerCase());
+        if (!response.ok) {
+          throw new Error('Failed to load resources');
+        }
 
-    const matchesDepartment =
-      selectedDepartment === 'all' || resource.department === selectedDepartment;
+        const data = await response.json();
+        setResources(data);
+      } catch (err) {
+        const message = err instanceof Error ? err.message : 'Failed to load resources';
+        setResourceError(message);
+      } finally {
+        setLoadingResources(false);
+      }
+    };
 
-    const matchesLevel = selectedLevel === 'all' || resource.level === selectedLevel;
+    loadResources();
+  }, [apiUrl]);
 
-    const matchesCourse = selectedCourse === 'all' || resource.courseCode === selectedCourse;
+  useEffect(() => {
+    const loadDepartments = async () => {
+      if (!userFacultyId) return;
+      setLoadingDepartments(true);
+      try {
+        const data = await authAPI.getDepartments(userFacultyId);
+        setAvailableDepartments(data);
+      } catch (err) {
+        console.error('Failed to load departments:', err);
+      } finally {
+        setLoadingDepartments(false);
+      }
+    };
 
-    return matchesSearch && matchesDepartment && matchesLevel && matchesCourse;
-  });
+    loadDepartments();
+  }, [userFacultyId]);
+
+  const facultyResources = useMemo(() => {
+    if (!userFacultyName) return resources;
+    return resources.filter((resource) => resource.faculty_name === userFacultyName);
+  }, [resources, userFacultyName]);
+
+  const derivedDepartmentNames = useMemo(() => {
+    if (availableDepartments.length > 0) {
+      return availableDepartments.map((dept) => dept.name);
+    }
+    const names = facultyResources
+      .map((resource) => resource.department_name)
+      .filter((name): name is string => Boolean(name));
+    return Array.from(new Set(names));
+  }, [availableDepartments, facultyResources]);
+
+  const hasGeneralResources = useMemo(
+    () => facultyResources.some((resource) => !resource.department_name),
+    [facultyResources]
+  );
+
+  const levelOptions = useMemo(() => {
+    const levels = facultyResources
+      .map((resource) => resource.level)
+      .filter((level): level is string => Boolean(level));
+    const uniqueLevels = Array.from(new Set(levels));
+    return uniqueLevels.sort((a, b) => Number(a) - Number(b));
+  }, [facultyResources]);
+
+  const courseOptions = useMemo(() => {
+    const courses = facultyResources
+      .map((resource) => resource.course_code)
+      .filter((course): course is string => Boolean(course));
+    return Array.from(new Set(courses)).sort();
+  }, [facultyResources]);
+
+  const filteredResources = useMemo(() => {
+    const query = searchQuery.trim().toLowerCase();
+
+    return facultyResources.filter((resource) => {
+      const title = resource.title?.toLowerCase() || '';
+      const courseCode = resource.course_code?.toLowerCase() || '';
+      const courseName = resource.course_name?.toLowerCase() || '';
+      const departmentName = resource.department_name?.toLowerCase() || '';
+      const facultyName = resource.faculty_name?.toLowerCase() || '';
+
+      const matchesSearch =
+        query === '' ||
+        title.includes(query) ||
+        courseCode.includes(query) ||
+        courseName.includes(query) ||
+        departmentName.includes(query) ||
+        facultyName.includes(query);
+
+      const matchesDepartment =
+        selectedDepartment === 'all' ||
+        (selectedDepartment === 'general'
+          ? !resource.department_name
+          : resource.department_name === selectedDepartment);
+
+      const matchesLevel = selectedLevel === 'all' || resource.level === selectedLevel;
+
+      const matchesCourse = selectedCourse === 'all' || resource.course_code === selectedCourse;
+
+      return matchesSearch && matchesDepartment && matchesLevel && matchesCourse;
+    });
+  }, [facultyResources, searchQuery, selectedDepartment, selectedLevel, selectedCourse]);
+
+  useEffect(() => {
+    setVisibleCount(PAGE_SIZE);
+  }, [searchQuery, selectedDepartment, selectedLevel, selectedCourse, facultyResources.length]);
+
+  const displayedResources = filteredResources.slice(0, visibleCount);
 
   const clearFilters = () => {
     setSelectedDepartment('all');
@@ -166,6 +184,13 @@ export default function Resources() {
 
   const hasActiveFilters =
     selectedDepartment !== 'all' || selectedLevel !== 'all' || selectedCourse !== 'all' || searchQuery !== '';
+
+  const emptyStateTitle = hasActiveFilters ? 'No resources found' : 'No resources available';
+  const emptyStateDescription = hasActiveFilters
+    ? 'Try adjusting your search or filters'
+    : 'Check back later or upload a resource to get started';
+
+  const canLoadMore = filteredResources.length > displayedResources.length;
 
   return (
     <DashboardLayout>
@@ -216,10 +241,13 @@ export default function Resources() {
                   <select
                     value={selectedDepartment}
                     onChange={(e) => setSelectedDepartment(e.target.value)}
-                    className="w-full bg-surface-container rounded-xl px-4 py-2.5 text-on-surface text-sm focus:bg-surface-container-high focus:outline-none focus:ring-2 focus:ring-tertiary/30 transition-all border border-outline-variant/10"
+                    disabled={loadingDepartments}
+                    className="w-full bg-surface-container rounded-xl px-4 py-2.5 text-on-surface text-sm focus:bg-surface-container-high focus:outline-none focus:ring-2 focus:ring-tertiary/30 transition-all border border-outline-variant/10 disabled:opacity-70"
                   >
-                    {departments.map((dept) => (
-                      <option key={dept} value={dept === 'All Departments' ? 'all' : dept}>
+                    <option value="all">All Departments</option>
+                    {hasGeneralResources && <option value="general">General (Faculty-wide)</option>}
+                    {derivedDepartmentNames.map((dept) => (
+                      <option key={dept} value={dept}>
                         {dept}
                       </option>
                     ))}
@@ -235,9 +263,10 @@ export default function Resources() {
                     onChange={(e) => setSelectedLevel(e.target.value)}
                     className="w-full bg-surface-container rounded-xl px-4 py-2.5 text-on-surface text-sm focus:bg-surface-container-high focus:outline-none focus:ring-2 focus:ring-tertiary/30 transition-all border border-outline-variant/10"
                   >
-                    {levels.map((level) => (
-                      <option key={level} value={level === 'All Levels' ? 'all' : level}>
-                        {level}
+                    <option value="all">All Levels</option>
+                    {levelOptions.map((level) => (
+                      <option key={level} value={level}>
+                        {formatLevel(level)}
                       </option>
                     ))}
                   </select>
@@ -252,8 +281,9 @@ export default function Resources() {
                     onChange={(e) => setSelectedCourse(e.target.value)}
                     className="w-full bg-surface-container rounded-xl px-4 py-2.5 text-on-surface text-sm focus:bg-surface-container-high focus:outline-none focus:ring-2 focus:ring-tertiary/30 transition-all border border-outline-variant/10"
                   >
-                    {courses.map((course) => (
-                      <option key={course} value={course === 'All Courses' ? 'all' : course}>
+                    <option value="all">All Courses</option>
+                    {courseOptions.map((course) => (
+                      <option key={course} value={course}>
                         {course}
                       </option>
                     ))}
@@ -275,30 +305,69 @@ export default function Resources() {
 
           <div className="flex items-center justify-between">
             <p className="text-sm text-on-surface-variant">
-              {filteredResources.length} resource{filteredResources.length !== 1 ? 's' : ''} found
+              {loadingResources
+                ? 'Loading resources...'
+                : `${filteredResources.length} resource${filteredResources.length !== 1 ? 's' : ''} found`}
             </p>
           </div>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {filteredResources.map((resource) => (
-            <ResourceCard key={resource.id} {...resource} />
-          ))}
-        </div>
-
-        {filteredResources.length === 0 && (
+        {!loadingResources && resourceError && (
           <div className="text-center py-16">
             <div className="w-16 h-16 rounded-full bg-surface-container-low flex items-center justify-center mx-auto mb-4">
               <Search className="w-8 h-8 text-on-surface-variant/40" />
             </div>
-            <h3 className="text-lg font-semibold text-on-surface mb-2">No resources found</h3>
-            <p className="text-on-surface-variant mb-6">Try adjusting your search or filters</p>
-            <button
-              onClick={clearFilters}
-              className="px-6 py-2.5 bg-surface-container-low text-on-surface rounded-full hover:bg-surface-container transition-all font-jakarta text-sm"
-            >
-              Clear filters
-            </button>
+            <h3 className="text-lg font-semibold text-on-surface mb-2">Unable to load resources</h3>
+            <p className="text-on-surface-variant mb-6">{resourceError}</p>
+          </div>
+        )}
+
+        {!loadingResources && !resourceError && displayedResources.length > 0 && (
+          <>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {displayedResources.map((resource) => (
+                <ResourceCard
+                  key={resource.id}
+                  id={resource.id}
+                  title={resource.title}
+                  type={normalizeFileType(resource.file_type)}
+                  subject={resource.course_name || resource.course_code || 'Faculty Resource'}
+                  courseCode={resource.course_code || undefined}
+                  rating={resource.rating_avg ?? undefined}
+                  department={resource.department_name || 'General'}
+                  level={formatLevel(resource.level)}
+                />
+              ))}
+            </div>
+
+            {canLoadMore && (
+              <div className="mt-10 flex justify-center">
+                <button
+                  onClick={() => setVisibleCount((prev) => prev + PAGE_SIZE)}
+                  className="px-8 py-3 bg-surface-container-low text-on-surface rounded-full hover:bg-surface-container transition-all font-jakarta text-sm"
+                >
+                  Load more
+                </button>
+              </div>
+            )}
+          </>
+        )}
+
+        {!loadingResources && !resourceError && filteredResources.length === 0 && (
+          <div className="text-center py-16">
+            <div className="w-16 h-16 rounded-full bg-surface-container-low flex items-center justify-center mx-auto mb-4">
+              <Search className="w-8 h-8 text-on-surface-variant/40" />
+            </div>
+            <h3 className="text-lg font-semibold text-on-surface mb-2">{emptyStateTitle}</h3>
+            <p className="text-on-surface-variant mb-6">{emptyStateDescription}</p>
+            {hasActiveFilters && (
+              <button
+                onClick={clearFilters}
+                className="px-6 py-2.5 bg-surface-container-low text-on-surface rounded-full hover:bg-surface-container transition-all font-jakarta text-sm"
+              >
+                Clear filters
+              </button>
+            )}
           </div>
         )}
       </div>

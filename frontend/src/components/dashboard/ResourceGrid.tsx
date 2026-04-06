@@ -1,9 +1,9 @@
-import ResourceCard from './ResourceCard';
+import ResourceCard, { type ResourceFileType } from './ResourceCard';
 
 interface Resource {
   id: string;
   title: string;
-  type: 'pdf' | 'image' | 'document';
+  type: ResourceFileType;
   thumbnail?: string;
   subject: string;
   progress?: number;
