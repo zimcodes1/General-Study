@@ -7,7 +7,6 @@ interface AccountInformationProps {
 }
 
 export default function AccountInformation({ onChange }: AccountInformationProps) {
-  const [user, setUser] = useState<any>(null);
   const [faculties, setFaculties] = useState<Faculty[]>([]);
   const [departments, setDepartments] = useState<Department[]>([]);
   const [loadingDepartments, setLoadingDepartments] = useState(false);
@@ -24,7 +23,6 @@ export default function AccountInformation({ onChange }: AccountInformationProps
 
   useEffect(() => {
     const userData = auth.getUser();
-    setUser(userData);
     if (userData) {
       setFormData({
         full_name: userData.full_name || '',
