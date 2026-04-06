@@ -13,6 +13,7 @@ pdfplumber = "*"
 python-docx = "*"
 python-pptx = "*"
 pytesseract = "*"
+celery = {extras = ["redis"], version = "*"}
 
 [dev-packages]
 
