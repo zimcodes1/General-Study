@@ -1,86 +1,132 @@
+import { useEffect, useMemo, useState } from 'react';
 import DashboardLayout from '../components/dashboard/DashboardLayout';
 import ResourceHeader from '../components/catalogue/ResourceHeader';
 import PrimaryActions from '../components/catalogue/PrimaryActions';
 import ProgressOverview from '../components/catalogue/ProgressOverview';
 import TopicsList from '../components/catalogue/TopicsList';
-import { ArrowLeft } from 'lucide-react';
-import { useNavigate } from 'react-router-dom';
+import { ArrowLeft, Search } from 'lucide-react';
+import { useNavigate, useParams } from 'react-router-dom';
+import { tokenStorage } from '../utils/auth';
+import type { ResourceFileType } from '../components/dashboard/ResourceCard';
+
+type CatalogueData = {
+    id: string;
+    title: string;
+    summary?: string | null;
+    content_json?: {
+      subtopics?: string[];
+      summaries?: string[];
+      quiz_questions?: Array<Record<string, unknown>>;
+    } | null;
+};
+
+type ResourceDetail = {
+    id: string;
+    title: string;
+    course_code?: string | null;
+    course_name?: string | null;
+    faculty_name?: string | null;
+    department_name?: string | null;
+    level?: string | null;
+    file_type?: string | null;
+    cover_image?: string | null;
+    rating_avg?: number | null;
+    rating_count?: number;
+    uploaded_by?: { full_name?: string | null };
+    created_at?: string | null;
+    catalogue?: CatalogueData | null;
+};
 
 export default function CatalogueOverview() {
   const navigate = useNavigate();
+  const { id } = useParams<{ id: string }>();
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [resource, setResource] = useState<ResourceDetail | null>(null);
 
-  const resourceData = {
-    title: 'Introduction to Machine Learning',
-    courseCode: 'CSC 201',
-    courseName: 'Artificial Intelligence Fundamentals',
-    description:
-      'A comprehensive guide to machine learning concepts, algorithms, and practical applications. This resource covers supervised and unsupervised learning, neural networks, and real-world case studies.',
-    coverImage: '/images/ml-cover.png',
-    rating: 4.8,
-    uploadedBy: 'Dr. Sarah Chen',
-    uploadDate: 'January 15, 2024',
+  const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:8000/api';
+
+  const normalizeFileType = (fileType?: string | null): ResourceFileType => {
+    if (!fileType) return 'other';
+    const normalized = fileType.toLowerCase();
+    if (
+      ['pdf', 'doc', 'docx', 'ppt', 'pptx', 'txt', 'image', 'document', 'other'].includes(
+        normalized
+      )
+    ) {
+      return normalized as ResourceFileType;
+    }
+    return 'other';
   };
+
+  useEffect(() => {
+    const loadResource = async () => {
+      if (!id) return;
+      setLoading(true);
+      setError(null);
+      try {
+        const accessToken = tokenStorage.getAccessToken();
+        const response = await fetch(`${apiUrl}/resources/${id}/`, {
+          headers: accessToken ? { Authorization: `Bearer ${accessToken}` } : undefined,
+        });
+
+        if (!response.ok) {
+          throw new Error('Failed to load resource');
+        }
+
+        const data = await response.json();
+        setResource(data);
+      } catch (err) {
+        const message = err instanceof Error ? err.message : 'Failed to load resource';
+        setError(message);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    loadResource();
+  }, [apiUrl, id]);
+
+  const topics = useMemo(() => {
+    const rawContent = resource?.catalogue?.content_json;
+    let content: CatalogueData['content_json'] | null = null;
+
+    if (typeof rawContent === 'string') {
+      try {
+        content = JSON.parse(rawContent) as CatalogueData['content_json'];
+      } catch (err) {
+        console.error('Failed to parse catalogue content_json:', err);
+      }
+    } else if (rawContent && typeof rawContent === 'object') {
+      content = rawContent;
+    }
+
+    const subtopics = content?.subtopics ?? [];
+    if (!Array.isArray(subtopics)) return [];
+
+    return subtopics
+      .filter((title): title is string => typeof title === 'string' && title.trim().length > 0)
+      .map((title, index) => ({
+        id: `topic-${index + 1}`,
+        title,
+        status: 'not-started' as const,
+        subtopics: [],
+      }));
+  }, [resource]);
+
+  const hasCatalogue = !loading && Boolean(resource?.catalogue);
+  const ratingValue =
+    resource?.rating_count && resource.rating_count > 0 ? resource.rating_avg ?? undefined : undefined;
+  const uploadDate = resource?.created_at
+    ? new Date(resource.created_at).toLocaleDateString()
+    : undefined;
 
   const progressData = {
-    percentageCompleted: 65,
-    lastStudiedSection: 'Neural Networks - Backpropagation',
-    totalTopics: 12,
-    completedTopics: 8,
+    percentageCompleted: 0,
+    lastStudiedSection: '',
+    totalTopics: topics.length,
+    completedTopics: 0,
   };
-
-  const topics = [
-    {
-      id: '1',
-      title: 'Introduction to Machine Learning',
-      status: 'completed' as const,
-      subtopics: [
-        { id: '1-1', title: 'What is Machine Learning?', status: 'completed' as const },
-        { id: '1-2', title: 'Types of Machine Learning', status: 'completed' as const },
-        { id: '1-3', title: 'Applications and Use Cases', status: 'completed' as const },
-      ],
-    },
-    {
-      id: '2',
-      title: 'Supervised Learning',
-      status: 'completed' as const,
-      subtopics: [
-        { id: '2-1', title: 'Linear Regression', status: 'completed' as const },
-        { id: '2-2', title: 'Logistic Regression', status: 'completed' as const },
-        { id: '2-3', title: 'Decision Trees', status: 'completed' as const },
-      ],
-    },
-    {
-      id: '3',
-      title: 'Neural Networks',
-      status: 'in-progress' as const,
-      subtopics: [
-        { id: '3-1', title: 'Perceptrons', status: 'completed' as const },
-        { id: '3-2', title: 'Activation Functions', status: 'completed' as const },
-        { id: '3-3', title: 'Backpropagation', status: 'in-progress' as const },
-        { id: '3-4', title: 'Training Neural Networks', status: 'not-started' as const },
-      ],
-    },
-    {
-      id: '4',
-      title: 'Deep Learning',
-      status: 'not-started' as const,
-      subtopics: [
-        { id: '4-1', title: 'Convolutional Neural Networks', status: 'not-started' as const },
-        { id: '4-2', title: 'Recurrent Neural Networks', status: 'not-started' as const },
-        { id: '4-3', title: 'Transfer Learning', status: 'not-started' as const },
-      ],
-    },
-    {
-      id: '5',
-      title: 'Unsupervised Learning',
-      status: 'not-started' as const,
-      subtopics: [
-        { id: '5-1', title: 'K-Means Clustering', status: 'not-started' as const },
-        { id: '5-2', title: 'Hierarchical Clustering', status: 'not-started' as const },
-        { id: '5-3', title: 'Principal Component Analysis', status: 'not-started' as const },
-      ],
-    },
-  ];
 
   const handleContinueLearning = () => {
     console.log('Continue learning');
@@ -106,6 +152,10 @@ export default function CatalogueOverview() {
     console.log('Subtopic clicked:', topicId, subtopicId);
   };
 
+  const handleCreateCatalogue = () => {
+    console.log('Create catalogue requested');
+  };
+
   return (
     <DashboardLayout>
       <div className="px-4 lg:px-8 py-8">
@@ -118,7 +168,35 @@ export default function CatalogueOverview() {
         </button>
 
         <div className="space-y-6">
-          <ResourceHeader {...resourceData} />
+          {loading && (
+            <div className="bg-surface-container-low rounded-3xl p-8 border border-outline-variant/10">
+              <p className="text-on-surface-variant">Loading resource details...</p>
+            </div>
+          )}
+
+          {!loading && error && (
+            <div className="bg-surface-container-low rounded-3xl p-8 border border-outline-variant/10 text-center">
+              <div className="w-12 h-12 rounded-full bg-surface-container flex items-center justify-center mx-auto mb-4">
+                <Search className="w-6 h-6 text-on-surface-variant/50" />
+              </div>
+              <p className="text-on-surface font-semibold mb-2">Unable to load resource</p>
+              <p className="text-on-surface-variant text-sm">{error}</p>
+            </div>
+          )}
+
+          {!loading && !error && resource && (
+            <ResourceHeader
+              title={resource.title}
+              courseCode={resource.course_code ?? undefined}
+              courseName={resource.course_name ?? undefined}
+              description={resource.catalogue?.summary ?? 'No summary available yet.'}
+              coverImage={resource.cover_image ?? undefined}
+              fileType={normalizeFileType(resource.file_type)}
+              rating={ratingValue}
+              uploadedBy={resource.uploaded_by?.full_name ?? 'Unknown'}
+              uploadDate={uploadDate}
+            />
+          )}
 
           <PrimaryActions
             onContinueLearning={handleContinueLearning}
@@ -131,6 +209,8 @@ export default function CatalogueOverview() {
             <div className="lg:col-span-2">
               <TopicsList
                 topics={topics}
+                hasCatalogue={hasCatalogue}
+                onCreateCatalogue={handleCreateCatalogue}
                 onTopicClick={handleTopicClick}
                 onSubtopicClick={handleSubtopicClick}
               />

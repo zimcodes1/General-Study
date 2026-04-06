@@ -1,14 +1,16 @@
 import { Star, Calendar, User } from 'lucide-react';
+import { getFileTypeMeta, type ResourceFileType } from '../dashboard/ResourceCard';
 
 interface ResourceHeaderProps {
   title: string;
-  courseCode: string;
-  courseName: string;
-  description: string;
-  coverImage?: string;
-  rating: number;
-  uploadedBy: string;
-  uploadDate: string;
+  courseCode?: string;
+  courseName?: string;
+  description?: string;
+  coverImage?: string | null;
+  fileType?: ResourceFileType;
+  rating?: number;
+  uploadedBy?: string;
+  uploadDate?: string;
 }
 
 export default function ResourceHeader({
@@ -17,59 +19,89 @@ export default function ResourceHeader({
   courseName,
   description,
   coverImage,
+  fileType,
   rating,
   uploadedBy,
   uploadDate,
 }: ResourceHeaderProps) {
+  const fileTypeMeta = getFileTypeMeta(fileType ?? 'other');
+  const FileIcon = fileTypeMeta.icon;
+
   return (
     <div className="bg-surface-container-low rounded-3xl overflow-hidden border border-outline-variant/10">
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {coverImage && (
-          <div className="lg:col-span-1">
+        <div className="lg:col-span-1">
+          {coverImage ? (
             <img
               src={coverImage}
               alt={title}
               className="w-full h-full object-cover min-h-[300px]"
             />
-          </div>
-        )}
+          ) : (
+            <div className="w-full h-full min-h-[300px] bg-surface-container-high flex items-center justify-center">
+              <div
+                className={`w-24 h-24 rounded-3xl border ${fileTypeMeta.className} flex items-center justify-center`}
+              >
+                <FileIcon className="w-10 h-10" />
+              </div>
+            </div>
+          )}
+        </div>
         
-        <div className={`p-8 ${coverImage ? 'lg:col-span-2' : 'lg:col-span-3'}`}>
+        <div className="p-8 lg:col-span-2">
           <div className="flex items-start gap-3 mb-4">
-            <div className="px-4 py-1.5 bg-tertiary-container/80 backdrop-blur-md rounded-full text-sm text-tertiary font-semibold font-jakarta">
-              {courseCode}
+            {courseCode && (
+              <div className="px-4 py-1.5 bg-tertiary-container/80 backdrop-blur-md rounded-full text-sm text-tertiary font-semibold font-jakarta">
+                {courseCode}
+              </div>
+            )}
+            <div
+              className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold border ${fileTypeMeta.className}`}
+            >
+              <FileIcon className="w-3.5 h-3.5" />
+              {fileTypeMeta.label}
             </div>
-            <div className="flex items-center gap-1">
-              {[...Array(5)].map((_, i) => (
-                <Star
-                  key={i}
-                  className={`w-4 h-4 ${
-                    i < Math.floor(rating)
-                      ? 'fill-tertiary text-tertiary'
-                      : 'text-surface-container-high'
-                  }`}
-                />
-              ))}
-              <span className="text-sm text-on-surface-variant ml-1">{rating.toFixed(1)}</span>
-            </div>
+            {rating !== undefined && (
+              <div className="flex items-center gap-1">
+                {[...Array(5)].map((_, i) => (
+                  <Star
+                    key={i}
+                    className={`w-4 h-4 ${
+                      i < Math.floor(rating)
+                        ? 'fill-tertiary text-tertiary'
+                        : 'text-surface-container-high'
+                    }`}
+                  />
+                ))}
+                <span className="text-sm text-on-surface-variant ml-1">{rating.toFixed(1)}</span>
+              </div>
+            )}
           </div>
 
           <h1 className="text-3xl lg:text-4xl font-bold text-on-surface mb-2 tracking-tight">
             {title}
           </h1>
-          <p className="text-lg text-on-surface-variant mb-6">{courseName}</p>
+          {courseName && (
+            <p className="text-lg text-on-surface-variant mb-6">{courseName}</p>
+          )}
 
-          <p className="text-on-surface-variant mb-6 leading-relaxed">{description}</p>
+          {description && (
+            <p className="text-on-surface-variant mb-6 leading-relaxed">{description}</p>
+          )}
 
           <div className="flex flex-wrap gap-4 text-sm text-on-surface-variant">
-            <div className="flex items-center gap-2">
-              <User className="w-4 h-4" />
-              <span>Uploaded by {uploadedBy}</span>
-            </div>
-            <div className="flex items-center gap-2">
-              <Calendar className="w-4 h-4" />
-              <span>{uploadDate}</span>
-            </div>
+            {uploadedBy && (
+              <div className="flex items-center gap-2">
+                <User className="w-4 h-4" />
+                <span>Uploaded by {uploadedBy}</span>
+              </div>
+            )}
+            {uploadDate && (
+              <div className="flex items-center gap-2">
+                <Calendar className="w-4 h-4" />
+                <span>{uploadDate}</span>
+              </div>
+            )}
           </div>
         </div>
       </div>
