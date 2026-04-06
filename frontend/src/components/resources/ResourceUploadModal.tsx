@@ -1,10 +1,17 @@
-import { useState, useEffect } from 'react';
-import { X, Upload, FileText, File, Image, FileSpreadsheet, Loader2, CheckCircle, Sparkles } from 'lucide-react';
+import { useState, useEffect, useRef } from 'react';
+import { X, Upload, FileText, File, Image, FileSpreadsheet, Loader2, CheckCircle, Sparkles, AlertCircle } from 'lucide-react';
 import { authAPI, type Faculty, type Department } from '../../utils/auth';
 
 interface ResourceUploadModalProps {
   isOpen: boolean;
   onClose: () => void;
+}
+
+interface ResourceStatus {
+  id: string;
+  status: 'processing' | 'pending' | 'approved' | 'rejected' | 'failed';
+  progress_percent: number;
+  processing_error?: string;
 }
 
 type FileType = 'pdf' | 'doc' | 'docx' | 'ppt' | 'pptx' | 'txt' | 'image' | null;
@@ -64,6 +71,11 @@ export default function ResourceUploadModal({ isOpen, onClose }: ResourceUploadM
   const [faculties, setFaculties] = useState<Faculty[]>([]);
   const [departments, setDepartments] = useState<Department[]>([]);
   const [loadingDepartments, setLoadingDepartments] = useState(false);
+  const [isUploading, setIsUploading] = useState(false);
+  const [resourceId, setResourceId] = useState<string | null>(null);
+  const [resourceStatus, setResourceStatus] = useState<ResourceStatus | null>(null);
+  const [error, setError] = useState<string | null>(null);
+  const pollingIntervalRef = useRef<number | null>(null);
   
   const [formData, setFormData] = useState({
     title: '',
@@ -80,6 +92,59 @@ export default function ResourceUploadModal({ isOpen, onClose }: ResourceUploadM
       loadFaculties();
     }
   }, [isOpen]);
+
+  // Polling effect for resource status
+  useEffect(() => {
+    if (!resourceId || step !== 'processing') {
+      if (pollingIntervalRef.current) {
+        clearInterval(pollingIntervalRef.current);
+        pollingIntervalRef.current = null;
+      }
+      return;
+    }
+
+    const pollStatus = async () => {
+      try {
+        const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:8000/api';
+        const response = await fetch(`${apiUrl}/resources/${resourceId}/status/`, {
+          headers: {
+            'Authorization': `Bearer ${localStorage.getItem('access_token')}`,
+          },
+        });
+        const status = await response.json();
+        setResourceStatus(status);
+
+        // Stop polling when done
+        if (status.status === 'pending' || status.status === 'approved') {
+          if (pollingIntervalRef.current) {
+            clearInterval(pollingIntervalRef.current);
+            pollingIntervalRef.current = null;
+          }
+          // Auto-close after success
+          setTimeout(handleClose, 2000);
+        } else if (status.status === 'failed' || status.status === 'rejected') {
+          if (pollingIntervalRef.current) {
+            clearInterval(pollingIntervalRef.current);
+            pollingIntervalRef.current = null;
+          }
+          setError(status.processing_error || 'Processing failed. Please try again.');
+        }
+      } catch (err) {
+        console.error('Error polling status:', err);
+      }
+    };
+
+    // Initial poll immediately, then every 2 seconds
+    pollStatus();
+    pollingIntervalRef.current = setInterval(pollStatus, 2000);
+
+    return () => {
+      if (pollingIntervalRef.current) {
+        clearInterval(pollingIntervalRef.current);
+        pollingIntervalRef.current = null;
+      }
+    };
+  }, [resourceId, step]);
 
   const loadFaculties = async () => {
     try {
@@ -129,17 +194,56 @@ export default function ResourceUploadModal({ isOpen, onClose }: ResourceUploadM
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setStep('processing');
     
-    // Simulate upload and processing
-    // TODO: Replace with actual API call
-    setTimeout(() => {
-      console.log('Upload complete', { formData, selectedFile });
-      // Reset and close after processing
-      setTimeout(() => {
-        handleClose();
-      }, 2000);
-    }, 3000);
+    if (!selectedFile) {
+      setError('Please select a file');
+      return;
+    }
+
+    setIsUploading(true);
+    setError(null);
+
+    try {
+      // Create FormData for multipart upload
+      const uploadData = new FormData();
+      uploadData.append('file', selectedFile);
+      uploadData.append('title', formData.title);
+      uploadData.append('course_code', formData.course_code);
+      uploadData.append('course_name', formData.course_name);
+      uploadData.append('faculty', formData.faculty_id);
+      if (formData.department_id) {
+        uploadData.append('department', formData.department_id);
+      }
+      uploadData.append('level', formData.level);
+      if (formData.attribution) {
+        uploadData.append('attribution', formData.attribution);
+      }
+
+      const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:8000/api';
+      const response = await fetch(`${apiUrl}/resources/`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${localStorage.getItem('access_token')}`,
+        },
+        body: uploadData,
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.detail || 'Upload failed');
+      }
+
+      const result = await response.json();
+      console.log('Upload successful:', result);
+      
+      setResourceId(result.id);
+      setStep('processing');
+      setIsUploading(false);
+    } catch (err) {
+      console.error('Upload error:', err);
+      setError(err instanceof Error ? err.message : 'Upload failed. Please try again.');
+      setIsUploading(false);
+    }
   };
 
   const handleClose = () => {
@@ -156,10 +260,34 @@ export default function ResourceUploadModal({ isOpen, onClose }: ResourceUploadM
       attribution: '',
     });
     setDepartments([]);
+    setResourceId(null);
+    setResourceStatus(null);
+    setError(null);
+    setIsUploading(false);
+    
+    // Clear polling
+    if (pollingIntervalRef.current) {
+      clearInterval(pollingIntervalRef.current);
+      pollingIntervalRef.current = null;
+    }
+    
     onClose();
   };
 
   if (!isOpen) return null;
+
+  const progressSteps = [
+    { label: 'File uploaded', status: resourceStatus ? true : false },
+    { label: 'Extracting text...', status: resourceStatus && resourceStatus.progress_percent >= 50 },
+    { label: 'Generating catalogue...', status: resourceStatus && resourceStatus.progress_percent >= 75 },
+    { label: 'Ready for review', status: resourceStatus?.status === 'pending' },
+  ];
+
+  const isFailed =
+    step === 'processing' &&
+    (resourceStatus?.status === 'failed' || resourceStatus?.status === 'rejected');
+  const failureMessage =
+    resourceStatus?.processing_error || error || 'Processing failed. Please try again.';
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
@@ -181,6 +309,13 @@ export default function ResourceUploadModal({ isOpen, onClose }: ResourceUploadM
 
             <form onSubmit={handleSubmit} className="p-6 overflow-y-auto max-h-[calc(90vh-140px)]">
               <div className="space-y-5">
+                {error && (
+                  <div className="flex items-center gap-3 p-4 bg-red-500/10 border border-red-500/20 rounded-xl">
+                    <AlertCircle className="w-5 h-5 text-red-500 flex-shrink-0" />
+                    <span className="text-sm text-red-700">{error}</span>
+                  </div>
+                )}
+
                 {/* File Upload */}
                 <div>
                   <label className="block text-xs text-on-surface-variant uppercase tracking-wider mb-3 font-jakarta">
@@ -197,6 +332,7 @@ export default function ResourceUploadModal({ isOpen, onClose }: ResourceUploadM
                       accept=".pdf,.doc,.docx,.ppt,.pptx,.txt,.jpg,.jpeg,.png,.gif,.webp"
                       className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
                       required
+                      disabled={isUploading}
                     />
                     <div className="flex flex-col items-center gap-3">
                       <div className={`w-12 h-12 rounded-full flex items-center justify-center ${
@@ -235,7 +371,8 @@ export default function ResourceUploadModal({ isOpen, onClose }: ResourceUploadM
                     onChange={handleChange}
                     placeholder="e.g., Introduction to Python Programming"
                     required
-                    className="w-full bg-surface-container rounded-xl px-4 py-3 text-on-surface placeholder:text-on-surface-variant/50 focus:bg-surface-container-high focus:outline-none focus:ring-2 focus:ring-tertiary/30 transition-all border border-outline-variant/10"
+                    disabled={isUploading}
+                    className="w-full bg-surface-container rounded-xl px-4 py-3 text-on-surface placeholder:text-on-surface-variant/50 focus:bg-surface-container-high focus:outline-none focus:ring-2 focus:ring-tertiary/30 transition-all border border-outline-variant/10 disabled:opacity-50"
                   />
                 </div>
 
@@ -252,7 +389,8 @@ export default function ResourceUploadModal({ isOpen, onClose }: ResourceUploadM
                       onChange={handleChange}
                       placeholder="e.g., CSC 301"
                       required
-                      className="w-full bg-surface-container rounded-xl px-4 py-3 text-on-surface placeholder:text-on-surface-variant/50 focus:bg-surface-container-high focus:outline-none focus:ring-2 focus:ring-tertiary/30 transition-all border border-outline-variant/10"
+                      disabled={isUploading}
+                      className="w-full bg-surface-container rounded-xl px-4 py-3 text-on-surface placeholder:text-on-surface-variant/50 focus:bg-surface-container-high focus:outline-none focus:ring-2 focus:ring-tertiary/30 transition-all border border-outline-variant/10 disabled:opacity-50"
                     />
                   </div>
                   <div>
@@ -266,7 +404,8 @@ export default function ResourceUploadModal({ isOpen, onClose }: ResourceUploadM
                       onChange={handleChange}
                       placeholder="e.g., Data Structures"
                       required
-                      className="w-full bg-surface-container rounded-xl px-4 py-3 text-on-surface placeholder:text-on-surface-variant/50 focus:bg-surface-container-high focus:outline-none focus:ring-2 focus:ring-tertiary/30 transition-all border border-outline-variant/10"
+                      disabled={isUploading}
+                      className="w-full bg-surface-container rounded-xl px-4 py-3 text-on-surface placeholder:text-on-surface-variant/50 focus:bg-surface-container-high focus:outline-none focus:ring-2 focus:ring-tertiary/30 transition-all border border-outline-variant/10 disabled:opacity-50"
                     />
                   </div>
                 </div>
@@ -282,7 +421,8 @@ export default function ResourceUploadModal({ isOpen, onClose }: ResourceUploadM
                       value={formData.faculty_id}
                       onChange={handleChange}
                       required
-                      className="w-full bg-surface-container rounded-xl px-4 py-3 text-on-surface appearance-none focus:bg-surface-container-high focus:outline-none focus:ring-2 focus:ring-tertiary/30 transition-all border border-outline-variant/10"
+                      disabled={isUploading}
+                      className="w-full bg-surface-container rounded-xl px-4 py-3 text-on-surface appearance-none focus:bg-surface-container-high focus:outline-none focus:ring-2 focus:ring-tertiary/30 transition-all border border-outline-variant/10 disabled:opacity-50"
                     >
                       <option value="">Select Faculty</option>
                       {faculties.map((faculty) => (
@@ -300,7 +440,7 @@ export default function ResourceUploadModal({ isOpen, onClose }: ResourceUploadM
                       name="department_id"
                       value={formData.department_id}
                       onChange={handleChange}
-                      disabled={!formData.faculty_id || loadingDepartments}
+                      disabled={!formData.faculty_id || loadingDepartments || isUploading}
                       className="w-full bg-surface-container rounded-xl px-4 py-3 text-on-surface appearance-none focus:bg-surface-container-high focus:outline-none focus:ring-2 focus:ring-tertiary/30 transition-all border border-outline-variant/10 disabled:opacity-50 disabled:cursor-not-allowed"
                     >
                       <option value="">
@@ -325,7 +465,8 @@ export default function ResourceUploadModal({ isOpen, onClose }: ResourceUploadM
                     value={formData.level}
                     onChange={handleChange}
                     required
-                    className="w-full bg-surface-container rounded-xl px-4 py-3 text-on-surface appearance-none focus:bg-surface-container-high focus:outline-none focus:ring-2 focus:ring-tertiary/30 transition-all border border-outline-variant/10"
+                    disabled={isUploading}
+                    className="w-full bg-surface-container rounded-xl px-4 py-3 text-on-surface appearance-none focus:bg-surface-container-high focus:outline-none focus:ring-2 focus:ring-tertiary/30 transition-all border border-outline-variant/10 disabled:opacity-50"
                   >
                     <option value="">Select Level</option>
                     <option value="100">100 Level</option>
@@ -348,7 +489,8 @@ export default function ResourceUploadModal({ isOpen, onClose }: ResourceUploadM
                     onChange={handleChange}
                     placeholder="Credit the original author or source if applicable"
                     rows={3}
-                    className="w-full bg-surface-container rounded-xl px-4 py-3 text-on-surface placeholder:text-on-surface-variant/50 focus:bg-surface-container-high focus:outline-none focus:ring-2 focus:ring-tertiary/30 transition-all border border-outline-variant/10 resize-none"
+                    disabled={isUploading}
+                    className="w-full bg-surface-container rounded-xl px-4 py-3 text-on-surface placeholder:text-on-surface-variant/50 focus:bg-surface-container-high focus:outline-none focus:ring-2 focus:ring-tertiary/30 transition-all border border-outline-variant/10 resize-none disabled:opacity-50"
                   />
                 </div>
               </div>
@@ -357,51 +499,121 @@ export default function ResourceUploadModal({ isOpen, onClose }: ResourceUploadM
                 <button
                   type="button"
                   onClick={handleClose}
-                  className="flex-1 px-6 py-3 bg-surface-container text-on-surface rounded-full hover:bg-surface-container-high transition-all font-jakarta"
+                  disabled={isUploading}
+                  className="flex-1 px-6 py-3 bg-surface-container text-on-surface rounded-full hover:bg-surface-container-high transition-all font-jakarta disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
-                  disabled={!selectedFile}
+                  disabled={!selectedFile || isUploading}
                   className="flex-1 px-6 py-3 bg-gradient-to-r from-primary to-secondary text-on-primary-fixed font-semibold rounded-full hover:shadow-[0_0_30px_rgba(155,168,255,0.4)] transition-all duration-300 flex items-center justify-center gap-2 font-jakarta disabled:opacity-50 disabled:cursor-not-allowed"
                 >
-                  <Upload className="w-5 h-5" />
-                  Upload Resource
+                  {isUploading ? (
+                    <>
+                      <Loader2 className="w-5 h-5 animate-spin" />
+                      Uploading...
+                    </>
+                  ) : (
+                    <>
+                      <Upload className="w-5 h-5" />
+                      Upload Resource
+                    </>
+                  )}
                 </button>
               </div>
             </form>
           </>
         ) : (
-          <div className="p-12 flex flex-col items-center justify-center min-h-[500px]">
-            <div className="relative mb-8">
-              <div className="w-24 h-24 rounded-full bg-gradient-to-br from-primary to-secondary flex items-center justify-center animate-pulse">
-                <Sparkles className="w-12 h-12 text-on-primary-fixed" />
+          <div className="p-8 flex flex-col min-h-[500px]">
+            <div className="flex items-start justify-between">
+              <div>
+                <h3 className="text-2xl font-bold text-on-surface">
+                  {isFailed ? 'Processing Failed' : 'Processing Your Resource'}
+                </h3>
+                <p className="text-on-surface-variant mt-1 max-w-md">
+                  {isFailed
+                    ? 'We hit a problem while extracting or generating the catalogue.'
+                    : "We're uploading your file and generating an AI-powered learning catalogue. This may take a moment..."}
+                </p>
               </div>
-              <div className="absolute -top-2 -right-2 w-8 h-8 rounded-full bg-tertiary flex items-center justify-center animate-bounce">
-                <Loader2 className="w-5 h-5 text-on-primary-fixed animate-spin" />
-              </div>
+              <button
+                onClick={handleClose}
+                className="text-on-surface-variant hover:text-on-surface transition-colors"
+                aria-label="Close"
+              >
+                <X className="w-6 h-6" />
+              </button>
             </div>
 
-            <h3 className="text-2xl font-bold text-on-surface mb-2">Processing Your Resource</h3>
-            <p className="text-on-surface-variant text-center mb-8 max-w-md">
-              We're uploading your file and generating an AI-powered learning catalogue. This may take a moment...
-            </p>
+            {isFailed ? (
+              <div className="flex flex-1 flex-col items-center justify-center text-center">
+                <div className="w-16 h-16 rounded-full bg-red-500/10 flex items-center justify-center mb-4">
+                  <AlertCircle className="w-8 h-8 text-red-500" />
+                </div>
+                <p className="text-sm text-red-700 bg-red-500/10 border border-red-500/20 rounded-xl px-4 py-3 max-w-xl">
+                  {failureMessage}
+                </p>
+                <button
+                  onClick={handleClose}
+                  className="mt-6 px-6 py-3 bg-surface-container text-on-surface rounded-full hover:bg-surface-container-high transition-all font-jakarta"
+                >
+                  Close
+                </button>
+              </div>
+            ) : (
+              <>
+                <div className="relative my-10 flex items-center justify-center">
+                  <div className="w-24 h-24 rounded-full bg-gradient-to-br from-primary to-secondary flex items-center justify-center animate-pulse">
+                    <Sparkles className="w-12 h-12 text-on-primary-fixed" />
+                  </div>
+                  <div className="absolute -top-2 -right-2 w-8 h-8 rounded-full bg-tertiary flex items-center justify-center animate-bounce">
+                    <Loader2 className="w-5 h-5 text-on-primary-fixed animate-spin" />
+                  </div>
+                </div>
 
-            <div className="w-full max-w-md space-y-4">
-              <div className="flex items-center gap-3 p-4 bg-surface-container rounded-xl">
-                <CheckCircle className="w-5 h-5 text-green-500 flex-shrink-0" />
-                <span className="text-on-surface">File uploaded successfully</span>
-              </div>
-              <div className="flex items-center gap-3 p-4 bg-surface-container rounded-xl">
-                <Loader2 className="w-5 h-5 text-primary animate-spin flex-shrink-0" />
-                <span className="text-on-surface">Generating learning catalogue...</span>
-              </div>
-              <div className="flex items-center gap-3 p-4 bg-surface-container rounded-xl opacity-50">
-                <div className="w-5 h-5 rounded-full border-2 border-outline-variant flex-shrink-0" />
-                <span className="text-on-surface-variant">Creating quiz questions</span>
-              </div>
-            </div>
+                <div className="w-full max-w-md mx-auto space-y-4">
+                  {progressSteps.map((step, idx) => (
+                    <div 
+                      key={idx}
+                      className={`flex items-center gap-3 p-4 rounded-xl transition-all ${
+                        step.status 
+                          ? 'bg-surface-container' 
+                          : 'bg-surface-container/50 opacity-50'
+                      }`}
+                    >
+                      {step.status ? (
+                        <CheckCircle className="w-5 h-5 text-green-500 flex-shrink-0" />
+                      ) : idx === progressSteps.findIndex(s => s.status === undefined || !s.status) ? (
+                        <Loader2 className="w-5 h-5 text-primary animate-spin flex-shrink-0" />
+                      ) : (
+                        <div className="w-5 h-5 rounded-full border-2 border-outline-variant flex-shrink-0" />
+                      )}
+                      <span className={step.status ? 'text-on-surface' : 'text-on-surface-variant'}>
+                        {step.label}
+                      </span>
+                    </div>
+                  ))}
+                </div>
+
+                {resourceStatus && (
+                  <div className="mt-8 text-center">
+                    <p className="text-sm text-on-surface-variant">
+                      Progress: {resourceStatus.progress_percent}%
+                    </p>
+                  </div>
+                )}
+
+                <div className="mt-8 flex justify-center">
+                  <button
+                    onClick={handleClose}
+                    className="px-6 py-3 bg-surface-container text-on-surface rounded-full hover:bg-surface-container-high transition-all font-jakarta"
+                  >
+                    Continue in background
+                  </button>
+                </div>
+              </>
+            )}
           </div>
         )}
       </div>
