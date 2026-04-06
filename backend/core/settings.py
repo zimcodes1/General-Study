@@ -10,8 +10,13 @@ For the full list of settings and their values, see
 https://docs.djangoproject.com/en/6.0/ref/settings/
 """
 
+import os
 from pathlib import Path
 from datetime import timedelta
+from dotenv import load_dotenv
+
+# Load environment variables from .env
+load_dotenv()
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -43,6 +48,7 @@ INSTALLED_APPS = [
     'assessments',
     'progress',
     'gamification',
+    'processing',
     'rest_framework',
     'rest_framework_simplejwt',
     'corsheaders',
@@ -126,8 +132,41 @@ USE_TZ = True
 
 STATIC_URL = 'static/'
 
+# Media files (User uploads)
+MEDIA_URL = 'media/'
+MEDIA_ROOT = BASE_DIR / 'media'
+
 # Custom User Model
 AUTH_USER_MODEL = 'users.User'
+
+# Logging Configuration
+LOGGING = {
+    'version': 1,
+    'disable_existing_loggers': False,
+    'formatters': {
+        'verbose': {
+            'format': '{levelname} {asctime} {module} {process:d} {thread:d} {message}',
+            'style': '{',
+        },
+    },
+    'handlers': {
+        'console': {
+            'class': 'logging.StreamHandler',
+            'formatter': 'verbose',
+        },
+    },
+    'root': {
+        'handlers': ['console'],
+        'level': 'INFO',
+    },
+    'loggers': {
+        'processing': {
+            'handlers': ['console'],
+            'level': 'DEBUG',
+            'propagate': False,
+        },
+    },
+}
 
 # REST Framework
 REST_FRAMEWORK = {
@@ -160,4 +199,24 @@ CELERY_RESULT_BACKEND = 'redis://localhost:6379/0'
 CELERY_ACCEPT_CONTENT = ['application/json']
 CELERY_TASK_SERIALIZER = 'json'
 CELERY_RESULT_SERIALIZER = 'json'
-CELERY_TIMEZONE = 'UTC' # Or your local timezone
+CELERY_TIMEZONE = 'UTC'
+
+# Celery Task Configuration
+CELERY_TASK_TIME_LIMIT = 30 * 60  # 30 minutes hard limit
+CELERY_TASK_SOFT_TIME_LIMIT = 25 * 60  # 25 minutes soft limit
+CELERY_TASK_TRACK_STARTED = True  # Track when tasks start
+
+# OpenAI API Configuration
+GROQ_API_KEY = os.getenv('GROQ_API_KEY')
+if not GROQ_API_KEY:
+    import warnings
+    warnings.warn("GROQ_API_KEY not found in environment. AI processing will fail.")
+
+# Optional: override Groq model via env if desired
+GROQ_MODEL = os.getenv('GROQ_MODEL', 'whisper-large-v3-turbo')
+
+# Admin Email
+ADMIN_EMAIL = os.getenv('ADMIN_EMAIL', 'admin@example.com')
+
+# Default sender email
+DEFAULT_FROM_EMAIL = 'noreply@aistudentresource.com'

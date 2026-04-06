@@ -1,2 +1,6 @@
 INTEGRATION_SUMMARY.md
 frontend/.env
+backend/media/
+backend/db.sqlite3
+backend/.env
+.codex
