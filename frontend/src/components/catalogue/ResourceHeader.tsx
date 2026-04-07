@@ -1,5 +1,8 @@
-import { Star, Calendar, User } from 'lucide-react';
+import { Star, Calendar, User, Bookmark } from 'lucide-react';
+import { useState, useEffect } from 'react';
 import { getFileTypeMeta, type ResourceFileType } from '../dashboard/ResourceCard';
+import { tokenStorage } from '../../utils/auth';
+import Toast from '../Toast';
 
 interface ResourceHeaderProps {
   title: string;
@@ -11,6 +14,7 @@ interface ResourceHeaderProps {
   rating?: number;
   uploadedBy?: string;
   uploadDate?: string;
+  resourceId?: string;
 }
 
 export default function ResourceHeader({
@@ -23,12 +27,88 @@ export default function ResourceHeader({
   rating,
   uploadedBy,
   uploadDate,
+  resourceId,
 }: ResourceHeaderProps) {
   const fileTypeMeta = getFileTypeMeta(fileType ?? 'other');
   const FileIcon = fileTypeMeta.icon;
+  
+  const accessToken = tokenStorage.getAccessToken();
+  const [isBookmarked, setIsBookmarked] = useState(false);
+  const [loadingBookmark, setLoadingBookmark] = useState(false);
+  const [showToast, setShowToast] = useState(false);
+  const [toastMessage, setToastMessage] = useState('');
 
-  return (
-    <div className="bg-surface-container-low rounded-3xl overflow-hidden border border-outline-variant/10">
+  // Fetch bookmark status on component mount
+  useEffect(() => {
+    if (resourceId && accessToken) {
+      checkBookmarkStatus();
+    }
+  }, [resourceId, accessToken]);
+
+  const checkBookmarkStatus = async () => {
+    try {
+      const response = await fetch(
+        `${import.meta.env.VITE_API_URL}/resources/${resourceId}/is_bookmarked/`,
+        {
+          headers: {
+            Authorization: `Bearer ${accessToken}`,
+          },
+        }
+      );
+      if (response.ok) {
+        const data = await response.json();
+        setIsBookmarked(data.is_bookmarked);
+      }
+    } catch (error) {
+      console.error('Error checking bookmark status:', error);
+    }
+  };
+
+  const toggleBookmark = async () => {
+    console.log('Toggling bookmark for resource:', resourceId);
+    if (!resourceId || !accessToken) return;
+    
+    setLoadingBookmark(true);
+    try {
+      const method = isBookmarked ? 'DELETE' : 'POST';
+      const response = await fetch(
+        `${import.meta.env.VITE_API_URL}/resources/${resourceId}/bookmark/`,
+        {
+          method,
+          headers: {
+            Authorization: `Bearer ${accessToken}`,
+          },
+        }
+      );
+      
+      if (response.ok) {
+        const newBookmarkState = !isBookmarked;
+        setIsBookmarked(newBookmarkState);
+        setToastMessage(newBookmarkState ? 'Resource bookmarked successfully!' : 'Bookmark removed');
+        setShowToast(true);
+      } else {
+        console.error('Bookmark toggle failed:', response.statusText);
+        setToastMessage('Failed to update bookmark');
+        setShowToast(true);
+      }
+    } catch (error) {
+      console.error('Error toggling bookmark:', error);
+      setToastMessage('Failed to update bookmark');
+      setShowToast(true);
+    } finally {
+      setLoadingBookmark(false);
+    }
+  };
+
+  return(
+    <>
+      {showToast && (
+        <Toast
+          message={toastMessage}
+          onClose={() => setShowToast(false)}
+        />
+      )}
+      <div className="bg-surface-container-low rounded-3xl overflow-hidden border border-outline-variant/10">
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         <div className="lg:col-span-1">
           {coverImage ? (
@@ -76,6 +156,22 @@ export default function ResourceHeader({
                 <span className="text-sm text-on-surface-variant ml-1">{rating.toFixed(1)}</span>
               </div>
             )}
+            {accessToken && (
+              <button
+                onClick={toggleBookmark}
+                disabled={loadingBookmark}
+                className={`ml-auto inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-semibold border transition-all cursor-pointer ${
+                  isBookmarked
+                    ? 'bg-tertiary-container text-tertiary border-tertiary'
+                    : 'bg-surface-container-high text-on-surface-variant border-outline-variant hover:border-outline'
+                } disabled:opacity-50 disabled:cursor-not-allowed`}
+              >
+                <Bookmark
+                  className={`w-3.5 h-3.5 ${isBookmarked ? 'fill-tertiary' : ''}`}
+                />
+                {loadingBookmark ? 'Loading...' : isBookmarked ? 'Bookmarked' : 'Bookmark'}
+              </button>
+            )}
           </div>
 
           <h1 className="text-3xl lg:text-4xl font-bold text-on-surface mb-2 tracking-tight">
@@ -106,5 +202,6 @@ export default function ResourceHeader({
         </div>
       </div>
     </div>
+    </>
   );
 }

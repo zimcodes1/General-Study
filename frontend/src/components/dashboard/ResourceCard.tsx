@@ -10,6 +10,8 @@ export type ResourceFileType =
 	| "pptx"
 	| "txt"
 	| "image"
+	| "video"
+	| "audio"
 	| "document"
 	| "other";
 
@@ -18,7 +20,7 @@ interface ResourceCardProps {
 	title: string;
 	type: ResourceFileType;
 	thumbnail?: string;
-	subject: string;
+	subject?: string;
 	progress?: number;
 	courseCode?: string;
 	rating?: number;

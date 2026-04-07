@@ -1,17 +1,5 @@
 import ResourceCard, { type ResourceFileType } from './ResourceCard';
-
-interface Resource {
-  id: string;
-  title: string;
-  type: ResourceFileType;
-  thumbnail?: string;
-  subject: string;
-  progress?: number;
-  courseCode?: string;
-  rating?: number;
-  department?: string;
-  level?: string;
-}
+import type { Resource } from '../../pages/Profile';
 
 interface ResourceGridProps {
   title: string;

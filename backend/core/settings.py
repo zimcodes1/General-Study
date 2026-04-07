@@ -49,6 +49,7 @@ INSTALLED_APPS = [
     'progress',
     'gamification',
     'processing',
+    'activity',
     'rest_framework',
     'rest_framework_simplejwt',
     'corsheaders',
