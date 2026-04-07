@@ -304,9 +304,9 @@ export default function Profile() {
 								<button
 									onClick={() => fetchMyResources(resourcesOffset)}
 									disabled={resourcesLoading}
-									className="px-6 py-2 bg-primary text-on-primary rounded-full hover:bg-primary/90 disabled:opacity-50"
+									className="px-6 py-2 text-on-primary cursor-pointer disabled:opacity-50"
 								>
-									{resourcesLoading ? 'Loading...' : 'Show More'}
+									{resourcesLoading ? 'Loading...' : 'Show More +'}
 								</button>
 							</div>
 						)}

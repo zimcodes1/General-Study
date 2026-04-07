@@ -30,29 +30,17 @@ const activityColors = {
 };
 
 export default function ActivityList({ activities = [] }: ActivityListProps) {
-  // Use provided activities or show placeholder
-  const displayActivities = activities.length > 0 ? activities : [
-    {
-      id: '1',
-      type: 'quiz' as const,
-      title: 'Machine Learning Quiz',
-      description: 'Completed quiz on CSC 201',
-      timestamp: '2 hours ago',
-      score: 92,
-    },
-  ];
-
   return (
     <div className="space-y-6">
       <h2 className="text-2xl font-bold text-on-surface tracking-tight">Recent Activity</h2>
 
-      {displayActivities.length === 0 ? (
+      {activities.length === 0 ? (
         <div className="text-center py-12">
           <p className="text-on-surface-variant">No activities yet</p>
         </div>
       ) : (
         <div className="space-y-3">
-          {displayActivities.map((activity) => {
+          {activities.map((activity) => {
             const Icon = activityIcons[activity.type];
             const colorClass = activityColors[activity.type];
 

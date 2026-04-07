@@ -1,6 +1,6 @@
-import { Link, useLocation } from 'react-router-dom';
-import { Home, BookOpen, FileText, User, Settings, X, Shield } from 'lucide-react';
-
+import { Link, useLocation, useNavigate } from 'react-router-dom';
+import { Home, BookOpen, FileText, User, Settings, X, Shield, LogOut } from 'lucide-react';
+import { auth } from '../../utils/auth';
 interface SidebarProps {
   isOpen: boolean;
   onClose: () => void;
@@ -8,6 +8,12 @@ interface SidebarProps {
 
 export default function Sidebar({ isOpen, onClose }: SidebarProps) {
   const location = useLocation();
+  const navigate = useNavigate();
+
+  const handleLogout = () => {
+    auth.logout();
+    navigate('/login');
+  };
 
   const navItems = [
     { icon: Home, label: 'Dashboard', path: '/dashboard' },
@@ -64,6 +70,14 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
               </Link>
             );
           })}
+          
+          <button
+            onClick={handleLogout}
+            className="lg:hidden w-full flex items-center gap-3 px-4 py-3 rounded-xl text-on-surface-variant hover:bg-surface-container hover:text-on-surface transition-all"
+          >
+            <LogOut className="w-5 h-5" />
+            <span className="font-jakarta text-sm">Logout</span>
+          </button>
         </nav>
 
         <div className="p-4 m-3 bg-surface-container rounded-xl border border-outline-variant/15">
