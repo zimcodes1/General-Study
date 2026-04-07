@@ -9,6 +9,10 @@ import { auth } from '../utils/auth';
 export default function Dashboard() {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [user, setUser] = useState<any>(null);
+  
+  useEffect(()=>{
+    document.title = 'Dashboard - General Study'
+  })
 
   useEffect(() => {
     const userData = auth.getUser();
@@ -32,6 +36,8 @@ export default function Dashboard() {
       subject: 'Computer Science',
       progress: 65,
       courseCode: 'CSC 201',
+      rating: 4.5,
+      level: 'Intermediate',
     },
     {
       id: '2',
@@ -40,14 +46,18 @@ export default function Dashboard() {
       subject: 'Computer Science',
       progress: 40,
       courseCode: 'CSC 301',
+      rating: 4.7,
+      level: 'Advanced',
     },
     {
       id: '3',
       title: 'Neural Networks Deep Dive',
-      type: 'document' as const,
+      type: 'docx' as const,
       subject: 'AI & ML',
       progress: 80,
       courseCode: 'CSC 401',
+      rating: 4.8,
+      level: 'Advanced',
     },
   ];
 
@@ -75,7 +85,7 @@ export default function Dashboard() {
     {
       id: '6',
       title: 'Web Development Fundamentals',
-      type: 'document' as const,
+      type: 'docx' as const,
       subject: 'Web Development',
       courseCode: 'CSC 205',
       rating: 4.7,
@@ -108,7 +118,7 @@ export default function Dashboard() {
     {
       id: '9',
       title: 'Mobile App Development',
-      type: 'document' as const,
+      type: 'docx' as const,
       subject: 'Mobile Development',
       courseCode: 'CSC 315',
       rating: 4.4,

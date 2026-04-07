@@ -1,5 +1,20 @@
 import { Flame, Trophy, Target, TrendingUp } from 'lucide-react';
 
+interface Stats {
+  total_points: number;
+  current_streak: number;
+  completed_catalogues: number;
+  average_score: number;
+  last_active_date?: string | null;
+  total_reviews?: number;
+  total_bookmarks?: number;
+  courses_enrolled?: number;
+}
+
+interface ProfileStatsProps {
+  stats?: Stats;
+}
+
 interface StatItemProps {
   icon: React.ElementType;
   label: string;
@@ -22,16 +37,46 @@ function StatItem({ icon: Icon, label, value, subtitle }: StatItemProps) {
   );
 }
 
-export default function ProfileStats() {
+export default function ProfileStats({ stats }: ProfileStatsProps) {
+  // Use provided stats or show defaults
+  const displayStats = stats || {
+    total_points: 0,
+    current_streak: 0,
+    completed_catalogues: 0,
+    average_score: 0,
+  };
+
+  const weeklyProgress = Math.min(100, Math.max(0, displayStats.average_score));
+
   return (
     <div className="space-y-6">
       <h2 className="text-2xl font-bold text-on-surface tracking-tight">Your Stats</h2>
       
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-        <StatItem icon={Trophy} label="Total Points" value="2,450" subtitle="+120 this week" />
-        <StatItem icon={Flame} label="Day Streak" value="15" subtitle="Keep it up!" />
-        <StatItem icon={Target} label="Completed" value="24" subtitle="Resources" />
-        <StatItem icon={TrendingUp} label="Avg. Score" value="87%" subtitle="+5% from last month" />
+        <StatItem 
+          icon={Trophy} 
+          label="Total Points" 
+          value={displayStats.total_points.toLocaleString()} 
+          subtitle="+120 this week" 
+        />
+        <StatItem 
+          icon={Flame} 
+          label="Day Streak" 
+          value={displayStats.current_streak} 
+          subtitle="Keep it up!" 
+        />
+        <StatItem 
+          icon={Target} 
+          label="Completed" 
+          value={displayStats.completed_catalogues} 
+          subtitle="Resources" 
+        />
+        <StatItem 
+          icon={TrendingUp} 
+          label="Avg. Score" 
+          value={`${displayStats.average_score}%`}
+          subtitle="+5% from last month" 
+        />
       </div>
 
       <div className="bg-surface-container-low rounded-2xl p-6 border border-outline-variant/10">
@@ -40,12 +85,12 @@ export default function ProfileStats() {
             <h3 className="text-lg font-semibold text-on-surface mb-1">Weekly Progress</h3>
             <p className="text-sm text-on-surface-variant">You're doing great this week!</p>
           </div>
-          <span className="text-2xl font-bold text-primary">68%</span>
+          <span className="text-2xl font-bold text-primary">{weeklyProgress}%</span>
         </div>
         <div className="h-3 bg-surface-container-high rounded-full overflow-hidden">
           <div
             className="h-full bg-gradient-to-r from-primary to-secondary rounded-full transition-all"
-            style={{ width: '68%' }}
+            style={{ width: `${weeklyProgress}%` }}
           />
         </div>
       </div>

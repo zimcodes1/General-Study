@@ -73,7 +73,7 @@ export default function Resources() {
         }
 
         const data = await response.json();
-        setResources(data);
+        setResources(data.results || data || []);
       } catch (err) {
         const message = err instanceof Error ? err.message : 'Failed to load resources';
         setResourceError(message);

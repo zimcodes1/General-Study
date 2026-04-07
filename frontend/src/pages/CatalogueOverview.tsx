@@ -195,6 +195,7 @@ export default function CatalogueOverview() {
               rating={ratingValue}
               uploadedBy={resource.uploaded_by?.full_name ?? 'Unknown'}
               uploadDate={uploadDate}
+              resourceId={id}
             />
           )}
 

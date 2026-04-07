@@ -3,7 +3,7 @@ DRF Serializers for Resource and Catalogue models.
 """
 
 from rest_framework import serializers
-from resources.models import Resource
+from resources.models import Resource, Bookmark
 from catalogues.models import Catalogue
 from users.models import User
 
@@ -232,3 +232,27 @@ class ResourceStatusSerializer(serializers.ModelSerializer):
             'processing_completed_at',
         ]
         read_only_fields = fields
+
+
+class BookmarkSerializer(serializers.ModelSerializer):
+    """Serializer for bookmarks."""
+    
+    resource_title = serializers.CharField(source='resource.title', read_only=True)
+    resource_course_code = serializers.CharField(source='resource.course_code', read_only=True)
+    resource_file_type = serializers.CharField(source='resource.file_type', read_only=True)
+    resource_cover_image = serializers.CharField(source='resource.cover_image', read_only=True, allow_null=True)
+    resource_rating_avg = serializers.FloatField(source='resource.rating_avg', read_only=True)
+    
+    class Meta:
+        model = Bookmark
+        fields = [
+            'id',
+            'resource',
+            'resource_title',
+            'resource_course_code',
+            'resource_file_type',
+            'resource_cover_image',
+            'resource_rating_avg',
+            'created_at',
+        ]
+        read_only_fields = ['id', 'created_at']
