@@ -4,3 +4,5 @@ backend/media/
 backend/db.sqlite3
 backend/.env
 .codex
+backend/activity/__pycache__/
+backend/users/__pycache__/
