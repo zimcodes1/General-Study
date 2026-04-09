@@ -3,8 +3,48 @@ from rest_framework.decorators import api_view, permission_classes
 from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated, AllowAny
 from rest_framework_simplejwt.tokens import RefreshToken
+from django.utils import timezone
+from datetime import timedelta
 from .serializers import UserRegistrationSerializer, UserSerializer, UserUpdateSerializer, FacultySerializer, DepartmentSerializer
 from .faculty_models import Faculty, Department
+from .models import User
+
+
+def update_user_streak(user):
+    """
+    Update user's streak based on login activity.
+    
+    Streak Logic:
+    - If last_active_date is None (never active before): Set streak to 1
+    - If last_active_date is today: Don't change streak (already counted)
+    - If last_active_date is yesterday: Increment streak (consecutive days)
+    - If last_active_date > 1 day ago: Reset streak to 1 (streak broken)
+    - Always update last_active_date to today
+    
+    Args:
+        user: User instance to update
+    """
+    today = timezone.now().date()
+    
+    if user.last_active_date is None:
+        # First login ever
+        user.streak = 1
+        user.last_active_date = today
+    elif user.last_active_date < today:
+        # User logged in on a different day
+        yesterday = today - timedelta(days=1)
+        
+        if user.last_active_date == yesterday:
+            # Consecutive day - increment streak
+            user.streak += 1
+        else:
+            # Streak was broken - reset to 1
+            user.streak = 1
+        
+        user.last_active_date = today
+    # else: same day login, don't change streak or last_active_date
+    
+    return user
 
 @api_view(['POST'])
 @permission_classes([AllowAny])
@@ -37,6 +77,10 @@ def login(request):
     user = authenticate(request, username=email, password=password)
     
     if user:
+        # Update streak on login
+        user = update_user_streak(user)
+        user.save(update_fields=['streak', 'last_active_date'])
+        
         refresh = RefreshToken.for_user(user)
         return Response({
             'user': UserSerializer(user).data,

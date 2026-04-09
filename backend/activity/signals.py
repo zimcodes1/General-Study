@@ -53,9 +53,11 @@ def track_bookmark_add(sender, instance, created, **kwargs):
             resource=instance.resource,
             metadata={'resource_title': instance.resource.title}
         )
-        # Update last active date
-        instance.user.last_active_date = timezone.now().date()
-        instance.user.save(update_fields=['last_active_date'])
+        # Update last active date (streak will be updated on next login)
+        today = timezone.now().date()
+        if instance.user.last_active_date != today:
+            instance.user.last_active_date = today
+            instance.user.save(update_fields=['last_active_date'])
 
 
 @receiver(post_delete, sender=Bookmark)
@@ -92,7 +94,7 @@ def track_review_action(sender, instance, created, **kwargs):
 
 @receiver(post_save, sender=Assessment)
 def track_assessment_completion(sender, instance, created, **kwargs):
-    """Create UserAction and update streak when assessment is completed"""
+    """Create UserAction when assessment is completed"""
     if created:
         UserAction.objects.create(
             user=instance.user,
@@ -124,9 +126,10 @@ def track_assessment_completion(sender, instance, created, **kwargs):
             points = int((instance.score / instance.total_questions) * 20)  # Max 20 points
             instance.user.points += points
             
-            # Update streak
+            # Update last_active_date (streak managed at login, not on every activity)
             today = timezone.now().date()
             if instance.user.last_active_date != today:
-                instance.user.streak += 1
-            instance.user.last_active_date = today
-            instance.user.save(update_fields=['points', 'streak', 'last_active_date'])
+                instance.user.last_active_date = today
+                instance.user.save(update_fields=['points', 'last_active_date'])
+            else:
+                instance.user.save(update_fields=['points'])
