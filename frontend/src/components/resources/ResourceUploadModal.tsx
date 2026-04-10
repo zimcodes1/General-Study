@@ -148,9 +148,7 @@ export default function ResourceUploadModal({ isOpen, onClose }: ResourceUploadM
 
   const loadFaculties = async () => {
     try {
-      console.log('Fetching faculties...');
       const data = await authAPI.getFaculties();
-      console.log('Faculties loaded:', data);
       setFaculties(data);
     } catch (err) {
       console.error('Failed to load faculties:', err);
@@ -160,9 +158,7 @@ export default function ResourceUploadModal({ isOpen, onClose }: ResourceUploadM
   const loadDepartments = async (facultyId: string) => {
     setLoadingDepartments(true);
     try {
-      console.log('Fetching departments for faculty:', facultyId);
       const data = await authAPI.getDepartments(facultyId);
-      console.log('Departments loaded:', data);
       setDepartments(data);
     } catch (err) {
       console.error('Failed to load departments:', err);
@@ -234,8 +230,6 @@ export default function ResourceUploadModal({ isOpen, onClose }: ResourceUploadM
       }
 
       const result = await response.json();
-      console.log('Upload successful:', result);
-      
       setResourceId(result.id);
       setStep('processing');
       setIsUploading(false);
