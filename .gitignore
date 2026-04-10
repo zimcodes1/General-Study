@@ -6,3 +6,4 @@ backend/.env
 .codex
 backend/activity/__pycache__/
 backend/users/__pycache__/
+backend/db.sqlite3

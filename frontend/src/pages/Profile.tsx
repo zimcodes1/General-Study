@@ -192,7 +192,7 @@ export default function Profile() {
 			if (response.ok) {
 				const data = await response.json();
 				const results = data.results || [];
-
+				console.log('Fetched activities:', results);
 				const formatActivityType = (actionType: string): Activity['type'] => {
 					const typeMap: Record<string, Activity['type']> = {
 						'resource_upload': 'upload',

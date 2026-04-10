@@ -1,4 +1,4 @@
-import { FileText, BookOpen, Award, Upload, Clock } from 'lucide-react';
+import { FileText, BookOpen, Award, Upload, Clock, Activity } from 'lucide-react';
 
 interface Activity {
   id: string;
@@ -35,8 +35,9 @@ export default function ActivityList({ activities = [] }: ActivityListProps) {
       <h2 className="text-2xl font-bold text-on-surface tracking-tight">Recent Activity</h2>
 
       {activities.length === 0 ? (
-        <div className="text-center py-12">
-          <p className="text-on-surface-variant">No activities yet</p>
+        <div className="text-center py-12 text-on-surface-variant">
+          <h1 className='inline-block'><Activity size={45}/></h1>
+          <p>No activities yet</p>
         </div>
       ) : (
         <div className="space-y-3">

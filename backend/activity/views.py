@@ -20,7 +20,7 @@ class UserActionViewSet(viewsets.ReadOnlyModelViewSet):
     def get_queryset(self):
         """Return activities for the current user"""
         user = self.request.user
-        queryset = UserAction.objects.filter(user=user)
+        queryset = UserAction.objects.filter(user=user).order_by('-created_at')
         
         # Optional filtering by action type
         action_type = self.request.query_params.get('action_type')
@@ -29,16 +29,24 @@ class UserActionViewSet(viewsets.ReadOnlyModelViewSet):
         
         return queryset
     
-    @action(detail=False, methods=['get'])
-    def my_activity(self, request):
-        """Get current user's activity"""
+    def list(self, request, *args, **kwargs):
+        """Override list to support custom pagination."""
+        limit = int(request.query_params.get('limit', 20))
+        offset = int(request.query_params.get('offset', 0))
+        
         queryset = self.get_queryset()
+        total_count = queryset.count()
         
-        # Pagination
-        page = self.paginate_queryset(queryset)
-        if page is not None:
-            serializer = self.get_serializer(page, many=True)
-            return self.get_paginated_response(serializer.data)
+        # Manually paginate
+        paginated = queryset[offset:offset + limit]
+        serializer = self.get_serializer(paginated, many=True)
         
-        serializer = self.get_serializer(queryset, many=True)
-        return Response(serializer.data)
+        return Response(
+            {
+                "count": total_count,
+                "limit": limit,
+                "offset": offset,
+                "results": serializer.data
+            },
+            status=status.HTTP_200_OK,
+        )

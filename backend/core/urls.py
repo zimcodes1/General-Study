@@ -28,5 +28,6 @@ urlpatterns = [
     path('api/', include(router.urls)),
     path('api/users/', include('users.urls')),
     path('api/', include('activity.urls')),
+    path('api/', include('progress.urls')),
     path('api/users/', include('gamification.urls')),
 ]
