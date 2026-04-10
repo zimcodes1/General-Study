@@ -5,9 +5,13 @@ from rest_framework.permissions import IsAuthenticated, AllowAny
 from rest_framework_simplejwt.tokens import RefreshToken
 from django.utils import timezone
 from datetime import timedelta
+from django.db.models import Avg, Count, Q
 from .serializers import UserRegistrationSerializer, UserSerializer, UserUpdateSerializer, FacultySerializer, DepartmentSerializer
 from .faculty_models import Faculty, Department
 from .models import User
+from progress.models import Progress
+from resources.models import Resource
+from resources.serializers import ResourceListSerializer
 
 
 def update_user_streak(user):
@@ -124,3 +128,73 @@ def get_departments(request):
         departments = Department.objects.all()
     serializer = DepartmentSerializer(departments, many=True)
     return Response(serializer.data)
+
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+def dashboard_stats(request):
+    """
+    Get dashboard statistics for the current user.
+    Returns: active_catalogues, total_points, avg_score, completed_count
+    """
+    user = request.user
+    
+    # Get user's progress records
+    progress_queryset = Progress.objects.filter(user=user)
+    
+    # Active Catalogues: count of progress records with completion < 100
+    active_catalogues = progress_queryset.filter(completion_percent__lt=100).count()
+    
+    # Completed: count of progress records with completion >= 100
+    completed_count = progress_queryset.filter(completion_percent__gte=100).count()
+    
+    # Average Score: average of all scores
+    avg_score_result = progress_queryset.aggregate(avg_score=Avg('score'))
+    avg_score = int(avg_score_result['avg_score'] or 0)
+    
+    # Total Points: user's accumulated points
+    total_points = user.points
+    
+    return Response({
+        'active_catalogues': active_catalogues,
+        'total_points': total_points,
+        'avg_score': avg_score,
+        'completed': completed_count,
+    }, status=status.HTTP_200_OK)
+
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+def recommended_resources(request):
+    """
+    Get resources recommended for the user based on their faculty.
+    Only returns high-rated approved resources (rating >= 4.0).
+    Query params: limit (default 3), offset (default 0)
+    """
+    user = request.user
+    limit = int(request.query_params.get('limit', 3))
+    offset = int(request.query_params.get('offset', 0))
+    
+    # If user has a faculty, get resources from their faculty with high ratings
+    if user.faculty:
+        resources = Resource.objects.filter(
+            faculty=user.faculty,
+            status='approved',
+            rating_avg__gte=4.0
+        ).order_by('-rating_avg', '-created_at')
+    else:
+        # If no faculty, get top-rated resources from any faculty
+        resources = Resource.objects.filter(
+            status='approved',
+            rating_avg__gte=4.0
+        ).order_by('-rating_avg', '-created_at')
+    
+    total_count = resources.count()
+    paginated_resources = resources[offset:offset + limit]
+    
+    serializer = ResourceListSerializer(paginated_resources, many=True)
+    
+    return Response({
+        'count': total_count,
+        'limit': limit,
+        'offset': offset,
+        'results': serializer.data
+    }, status=status.HTTP_200_OK)

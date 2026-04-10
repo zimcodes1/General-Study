@@ -10,4 +10,6 @@ urlpatterns = [
     path('token/refresh/', TokenRefreshView.as_view(), name='token_refresh'),
     path('faculties/', views.get_faculties, name='faculties'),
     path('departments/', views.get_departments, name='departments'),
+    path('dashboard/stats/', views.dashboard_stats, name='dashboard_stats'),
+    path('recommended-resources/', views.recommended_resources, name='recommended_resources'),
 ]
