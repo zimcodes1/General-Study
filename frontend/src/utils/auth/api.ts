@@ -59,6 +59,13 @@ export interface ProgressListResponse {
   results: Progress[];
 }
 
+export interface DashboardStats {
+  active_catalogues: number;
+  total_points: number;
+  avg_score: number;
+  completed: number;
+}
+
 export interface RegisterData {
   full_name: string;
   email: string;
@@ -180,6 +187,50 @@ export const authAPI = {
 
     return response.json();
   },
+
+  getDashboardStats: async (): Promise<DashboardStats> => {
+    const accessToken = localStorage.getItem('access_token');
+    if (!accessToken) {
+      throw new Error('Unauthorized');
+    }
+
+    const response = await fetch(`${API_BASE_URL}/users/dashboard/stats/`, {
+      headers: {
+        'Authorization': `Bearer ${accessToken}`,
+      },
+    });
+
+    if (!response.ok) {
+      throw new Error('Failed to fetch dashboard stats');
+    }
+
+    return response.json();
+  },
+
+  getRecommendedResources: async (
+    limit: number = 3,
+    offset: number = 0
+  ): Promise<ResourceListResponse> => {
+    const accessToken = localStorage.getItem('access_token');
+    if (!accessToken) {
+      throw new Error('Unauthorized');
+    }
+
+    const response = await fetch(
+      `${API_BASE_URL}/users/recommended-resources/?limit=${limit}&offset=${offset}`,
+      {
+        headers: {
+          'Authorization': `Bearer ${accessToken}`,
+        },
+      }
+    );
+
+    if (!response.ok) {
+      throw new Error('Failed to fetch recommended resources');
+    }
+
+    return response.json();
+  },
 };
 
 export const resourceAPI = {
@@ -272,6 +323,31 @@ export const resourceAPI = {
     if (!response.ok) {
       throw new Error('Failed to remove bookmark');
     }
+  },
+
+  getRecentlyAdded: async (
+    limit: number = 3,
+    offset: number = 0
+  ): Promise<ResourceListResponse> => {
+    const accessToken = localStorage.getItem('access_token');
+    if (!accessToken) {
+      throw new Error('Unauthorized');
+    }
+
+    const response = await fetch(
+      `${API_BASE_URL}/resources/?limit=${limit}&offset=${offset}`,
+      {
+        headers: {
+          'Authorization': `Bearer ${accessToken}`,
+        },
+      }
+    );
+
+    if (!response.ok) {
+      throw new Error('Failed to fetch recently added resources');
+    }
+
+    return response.json();
   },
 };
 
