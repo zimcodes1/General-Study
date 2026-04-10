@@ -11,7 +11,17 @@ import { tokenStorage } from "../utils/auth";
 export interface Resource {
 	id: string;
 	title: string;
-	type: "pdf" | "doc" | "docx" | "ppt" | "pptx" | "txt" | "image" | "video" | "audio" | "other";
+	type:
+		| "pdf"
+		| "doc"
+		| "docx"
+		| "ppt"
+		| "pptx"
+		| "txt"
+		| "image"
+		| "video"
+		| "audio"
+		| "other";
 	subject?: string;
 	courseCode: string;
 	rating: number;
@@ -23,7 +33,7 @@ export interface Resource {
 
 interface Activity {
 	id: string;
-	type: 'quiz' | 'exam' | 'upload' | 'bookmark' | 'complete';
+	type: "quiz" | "exam" | "upload" | "bookmark" | "complete";
 	title: string;
 	description: string;
 	timestamp: string;
@@ -44,7 +54,7 @@ interface Stats {
 export default function Profile() {
 	const [activeTab, setActiveTab] = useState<TabType>("resources");
 	const [userInfo, setUser] = useState<any>(null);
-	const  accessToken = tokenStorage.getAccessToken();
+	const accessToken = tokenStorage.getAccessToken();
 
 	// Resources state
 	const [myResources, setMyResources] = useState<Resource[]>([]);
@@ -53,7 +63,9 @@ export default function Profile() {
 	const [showMoreResourcesBtn, setShowMoreResourcesBtn] = useState(true);
 
 	// Bookmarks state
-	const [bookmarkedResources, setBookmarkedResources] = useState<Resource[]>([]);
+	const [bookmarkedResources, setBookmarkedResources] = useState<Resource[]>(
+		[],
+	);
 	const [bookmarksLoading, setBookmarksLoading] = useState(false);
 	const [bookmarksOffset, setBookmarksOffset] = useState(0);
 	const [showMoreBookmarksBtn, setShowMoreBookmarksBtn] = useState(true);
@@ -89,7 +101,7 @@ export default function Profile() {
 					headers: {
 						Authorization: `Bearer ${accessToken}`,
 					},
-				}
+				},
 			);
 			if (response.ok) {
 				const data = await response.json();
@@ -109,14 +121,14 @@ export default function Profile() {
 				if (offset === 0) {
 					setMyResources(formattedResources);
 				} else {
-					setMyResources(prev => [...prev, ...formattedResources]);
+					setMyResources((prev) => [...prev, ...formattedResources]);
 				}
 
 				setResourcesOffset(offset + 9);
-				setShowMoreResourcesBtn((offset + 9) < data.count);
+				setShowMoreResourcesBtn(offset + 9 < data.count);
 			}
 		} catch (error) {
-			console.error('Error fetching resources:', error);
+			console.error("Error fetching resources:", error);
 		} finally {
 			setResourcesLoading(false);
 		}
@@ -138,7 +150,7 @@ export default function Profile() {
 					headers: {
 						Authorization: `Bearer ${accessToken}`,
 					},
-				}
+				},
 			);
 			if (response.ok) {
 				const data = await response.json();
@@ -158,14 +170,14 @@ export default function Profile() {
 				if (offset === 0) {
 					setBookmarkedResources(formattedResources);
 				} else {
-					setBookmarkedResources(prev => [...prev, ...formattedResources]);
+					setBookmarkedResources((prev) => [...prev, ...formattedResources]);
 				}
 
 				setBookmarksOffset(offset + 9);
-				setShowMoreBookmarksBtn((offset + 9) < data.count);
+				setShowMoreBookmarksBtn(offset + 9 < data.count);
 			}
 		} catch (error) {
-			console.error('Error fetching bookmarks:', error);
+			console.error("Error fetching bookmarks:", error);
 		} finally {
 			setBookmarksLoading(false);
 		}
@@ -187,25 +199,25 @@ export default function Profile() {
 					headers: {
 						Authorization: `Bearer ${accessToken}`,
 					},
-				}
+				},
 			);
 			if (response.ok) {
 				const data = await response.json();
 				const results = data.results || [];
-				console.log('Fetched activities:', results);
-				const formatActivityType = (actionType: string): Activity['type'] => {
-					const typeMap: Record<string, Activity['type']> = {
-						'resource_upload': 'upload',
-						'resource_approved': 'upload',
-						'bookmark_add': 'bookmark',
-						'bookmark_remove': 'bookmark',
-						'review_create': 'complete',
-						'review_update': 'complete',
-						'assessment_start': 'quiz',
-						'assessment_complete': 'exam',
-						'catalogue_complete': 'complete',
+				console.log("Fetched activities:", results);
+				const formatActivityType = (actionType: string): Activity["type"] => {
+					const typeMap: Record<string, Activity["type"]> = {
+						resource_upload: "upload",
+						resource_approved: "upload",
+						bookmark_add: "bookmark",
+						bookmark_remove: "bookmark",
+						review_create: "complete",
+						review_update: "complete",
+						assessment_start: "quiz",
+						assessment_complete: "exam",
+						catalogue_complete: "complete",
 					};
-					return typeMap[actionType] || 'complete';
+					return typeMap[actionType] || "complete";
 				};
 
 				const formattedActivities: Activity[] = results.map((a: any) => {
@@ -216,22 +228,24 @@ export default function Profile() {
 					const diffHours = Math.floor(diffMs / 3600000);
 					const diffDays = Math.floor(diffMs / 86400000);
 
-					let timeAgo = '';
+					let timeAgo = "";
 					if (diffMins < 1) {
-						timeAgo = 'Just now';
+						timeAgo = "Just now";
 					} else if (diffMins < 60) {
-						timeAgo = `${diffMins} ${diffMins === 1 ? 'minute' : 'minutes'} ago`;
+						timeAgo = `${diffMins} ${diffMins === 1 ? "minute" : "minutes"} ago`;
 					} else if (diffHours < 24) {
-						timeAgo = `${diffHours} ${diffHours === 1 ? 'hour' : 'hours'} ago`;
+						timeAgo = `${diffHours} ${diffHours === 1 ? "hour" : "hours"} ago`;
 					} else {
-						timeAgo = `${diffDays} ${diffDays === 1 ? 'day' : 'days'} ago`;
+						timeAgo = `${diffDays} ${diffDays === 1 ? "day" : "days"} ago`;
 					}
 
 					return {
 						id: a.id,
 						type: formatActivityType(a.action_type),
 						title: a.action_display,
-						description: a.resource_title ? `${a.action_display} - ${a.resource_title}` : a.action_display,
+						description: a.resource_title
+							? `${a.action_display} - ${a.resource_title}`
+							: a.action_display,
 						timestamp: timeAgo,
 						score: a.metadata?.score,
 					};
@@ -240,7 +254,7 @@ export default function Profile() {
 				setActivities(formattedActivities);
 			}
 		} catch (error) {
-			console.error('Error fetching activities:', error);
+			console.error("Error fetching activities:", error);
 		} finally {
 			setActivityLoading(false);
 		}
@@ -262,14 +276,14 @@ export default function Profile() {
 					headers: {
 						Authorization: `Bearer ${accessToken}`,
 					},
-				}
+				},
 			);
 			if (response.ok) {
 				const data = await response.json();
 				setStats(data);
 			}
 		} catch (error) {
-			console.error('Error fetching stats:', error);
+			console.error("Error fetching stats:", error);
 		} finally {
 			setStatsLoading(false);
 		}
@@ -296,17 +310,19 @@ export default function Profile() {
 						/>
 						{myResources.length === 0 && !resourcesLoading && (
 							<div className="text-center py-12">
-								<p className="text-on-surface-variant">No resources uploaded yet</p>
+								<p className="text-on-surface-variant">
+									No resources uploaded yet
+								</p>
 							</div>
 						)}
 						{showMoreResourcesBtn && (
-							<div className="flex justify-center mt-8">
+							<div className="flex justify-center mt-8 pt-6 border-t border-outline-variant/20">
 								<button
 									onClick={() => fetchMyResources(resourcesOffset)}
 									disabled={resourcesLoading}
-									className="px-6 py-2 text-on-primary cursor-pointer disabled:opacity-50"
+									className="px-8 py-3 bg-surface-container text-on-surface rounded-full hover:bg-surface-container-high transition-all font-jakarta text-sm font-medium border border-outline-variant/20"
 								>
-									{resourcesLoading ? 'Loading...' : 'Show More +'}
+									{resourcesLoading ? "Loading..." : "Show More +"}
 								</button>
 							</div>
 						)}
@@ -317,7 +333,9 @@ export default function Profile() {
 					<div>
 						<ResourceGrid
 							title="Bookmarked Resources"
-							resources={bookmarkedResources.length > 0 ? bookmarkedResources : []}
+							resources={
+								bookmarkedResources.length > 0 ? bookmarkedResources : []
+							}
 							maxItems={bookmarkedResources.length}
 							showRemoveButton
 						/>
@@ -333,7 +351,7 @@ export default function Profile() {
 									disabled={bookmarksLoading}
 									className="px-6 py-2 bg-primary text-on-primary rounded-full hover:bg-primary/90 disabled:opacity-50"
 								>
-									{bookmarksLoading ? 'Loading...' : 'Show More'}
+									{bookmarksLoading ? "Loading..." : "Show More"}
 								</button>
 							</div>
 						)}
