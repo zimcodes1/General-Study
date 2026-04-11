@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import DashboardLayout from '../components/dashboard/DashboardLayout';
 import ResourceHeader from '../components/catalogue/ResourceHeader';
 import PrimaryActions from '../components/catalogue/PrimaryActions';
@@ -40,6 +40,9 @@ export default function CatalogueOverview() {
   const [catalogue, setCatalogue] = useState<CatalogueDetail | null>(null);
   const [progress, setProgress] = useState<CatalogueDetail['user_progress'] | null>(null);
   const [catalogueLoading, setCatalogueLoading] = useState(false);
+  const [catalogueCreating, setCatalogueCreating] = useState(false);
+  const [catalogueCreateError, setCatalogueCreateError] = useState<string | null>(null);
+  const pollTimeoutRef = useRef<number | null>(null);
 
   const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:8000/api';
 
@@ -56,55 +59,68 @@ export default function CatalogueOverview() {
     return 'other';
   };
 
-  // Load resource
-  useEffect(() => {
-    const loadResource = async () => {
-      if (!id) return;
+  const loadResource = async (showLoader: boolean = true) => {
+    if (!id) return;
+    if (showLoader) {
       setLoading(true);
-      setError(null);
-      try {
-        const accessToken = tokenStorage.getAccessToken();
-        const response = await fetch(`${apiUrl}/resources/${id}/`, {
-          headers: accessToken ? { Authorization: `Bearer ${accessToken}` } : undefined,
-        });
+    }
+    setError(null);
+    try {
+      const accessToken = tokenStorage.getAccessToken();
+      const response = await fetch(`${apiUrl}/resources/${id}/`, {
+        headers: accessToken ? { Authorization: `Bearer ${accessToken}` } : undefined,
+      });
 
-        if (!response.ok) {
-          throw new Error('Failed to load resource');
-        }
+      if (!response.ok) {
+        throw new Error('Failed to load resource');
+      }
 
-        const data = await response.json();
-        setResource(data);
-      } catch (err) {
-        const message = err instanceof Error ? err.message : 'Failed to load resource';
-        setError(message);
-      } finally {
+      const data = await response.json();
+      setResource(data);
+      return data;
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'Failed to load resource';
+      setError(message);
+      return null;
+    } finally {
+      if (showLoader) {
         setLoading(false);
       }
-    };
+    }
+  };
 
+  // Load resource
+  useEffect(() => {
     loadResource();
   }, [apiUrl, id]);
+
+  const loadCatalogueData = async (catalogueId: string) => {
+    setCatalogueLoading(true);
+    try {
+      const catalogueData = await catalogueAPI.getCatalogue(catalogueId);
+      setCatalogue(catalogueData);
+      setProgress(catalogueData.user_progress || null);
+    } catch (err) {
+      console.error('Failed to load catalogue data:', err);
+      // Don't show error to user - old content_json fallback will be used
+    } finally {
+      setCatalogueLoading(false);
+    }
+  };
 
   // Load catalogue and progress when resource is loaded
   useEffect(() => {
     if (!resource?.catalogue?.id) return;
+    loadCatalogueData(resource.catalogue.id);
+  }, [resource?.catalogue?.id]);
 
-    const loadCatalogueData = async () => {
-      setCatalogueLoading(true);
-      try {
-        const catalogueData = await catalogueAPI.getCatalogue(resource.catalogue!.id);
-        setCatalogue(catalogueData);
-        setProgress(catalogueData.user_progress || null);
-      } catch (err) {
-        console.error('Failed to load catalogue data:', err);
-        // Don't show error to user - old content_json fallback will be used
-      } finally {
-        setCatalogueLoading(false);
+  useEffect(() => {
+    return () => {
+      if (pollTimeoutRef.current) {
+        window.clearTimeout(pollTimeoutRef.current);
       }
     };
-
-    loadCatalogueData();
-  }, [resource?.catalogue?.id]);
+  }, []);
 
   // Transform topics into display format
   const displayTopics = catalogue
@@ -236,7 +252,84 @@ export default function CatalogueOverview() {
   };
 
   const handleCreateCatalogue = () => {
-    console.log('Create catalogue requested');
+    if (!resource?.id) return;
+    setCatalogueCreateError(null);
+    setCatalogueCreating(true);
+
+    const startCreation = async () => {
+      try {
+        const accessToken = tokenStorage.getAccessToken();
+        const response = await fetch(`${apiUrl}/resources/${resource.id}/create_catalogue/`, {
+          method: 'POST',
+          headers: accessToken ? { Authorization: `Bearer ${accessToken}` } : undefined,
+        });
+
+        if (!response.ok) {
+          const data = await response.json().catch(() => ({}));
+          throw new Error(data.detail || 'Failed to start catalogue creation');
+        }
+
+        pollCatalogueStatus(0);
+      } catch (err) {
+        const message = err instanceof Error ? err.message : 'Failed to start catalogue creation';
+        setCatalogueCreateError(message);
+        setCatalogueCreating(false);
+      }
+    };
+
+    const pollCatalogueStatus = async (attempt: number) => {
+      const maxAttempts = 20;
+      const intervalMs = 4000;
+
+      if (!resource?.id) return;
+      if (attempt >= maxAttempts) {
+        setCatalogueCreateError('Catalogue creation is taking longer than expected. Please refresh.');
+        setCatalogueCreating(false);
+        return;
+      }
+
+      try {
+        const accessToken = tokenStorage.getAccessToken();
+        const statusResponse = await fetch(`${apiUrl}/resources/${resource.id}/status/`, {
+          headers: accessToken ? { Authorization: `Bearer ${accessToken}` } : undefined,
+        });
+
+        if (!statusResponse.ok) {
+          throw new Error('Failed to check catalogue status');
+        }
+
+        const statusData = await statusResponse.json();
+        const status = statusData.status;
+
+        if (status === 'failed') {
+          setCatalogueCreateError(statusData.processing_error || 'Catalogue creation failed');
+          setCatalogueCreating(false);
+          return;
+        }
+
+        if (status === 'pending' || status === 'approved' || status === 'rejected') {
+          const updatedResource = await loadResource(false);
+          if (updatedResource?.catalogue?.id) {
+            await loadCatalogueData(updatedResource.catalogue.id);
+          }
+          setCatalogueCreating(false);
+          return;
+        }
+      } catch (err) {
+        if (attempt >= maxAttempts - 1) {
+          const message = err instanceof Error ? err.message : 'Failed to check catalogue status';
+          setCatalogueCreateError(message);
+          setCatalogueCreating(false);
+          return;
+        }
+      }
+
+      pollTimeoutRef.current = window.setTimeout(() => {
+        pollCatalogueStatus(attempt + 1);
+      }, intervalMs);
+    };
+
+    startCreation();
   };
 
   return (
@@ -295,6 +388,8 @@ export default function CatalogueOverview() {
                 topics={displayTopics}
                 hasCatalogue={hasCatalogue}
                 loading={catalogueLoading}
+                creatingCatalogue={catalogueCreating}
+                createError={catalogueCreateError}
                 onCreateCatalogue={handleCreateCatalogue}
                 onTopicClick={handleTopicClick}
               />

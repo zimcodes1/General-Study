@@ -8,8 +8,10 @@ from rest_framework.decorators import action
 from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.parsers import MultiPartParser, FormParser
+from django.utils import timezone
 
 from resources.models import Resource, Bookmark
+from catalogues.models import Catalogue
 from resources.serializers import (
     ResourceUploadSerializer,
     ResourceDetailSerializer,
@@ -189,6 +191,58 @@ class ResourceViewSet(viewsets.ModelViewSet):
                 {"detail": "Resource not found."},
                 status=status.HTTP_404_NOT_FOUND,
             )
+
+    @action(detail=True, methods=['post'], permission_classes=[IsAuthenticated])
+    def create_catalogue(self, request, pk=None):
+        """
+        Create or retry catalogue generation for an existing resource.
+        """
+        resource = self.get_object()
+
+        if resource.uploaded_by != request.user and not request.user.is_staff:
+            return Response(
+                {"detail": "You don't have permission to create this catalogue."},
+                status=status.HTTP_403_FORBIDDEN,
+            )
+
+        if Catalogue.objects.filter(resource=resource).exists():
+            return Response(
+                {"detail": "Catalogue already exists for this resource."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        if resource.status == 'processing':
+            return Response(
+                {"detail": "Catalogue creation already in progress."},
+                status=status.HTTP_409_CONFLICT,
+            )
+
+        if not resource.raw_text and not resource.file:
+            return Response(
+                {"detail": "Resource has no extracted text or file to process."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        resource.status = 'processing'
+        resource.processing_error = None
+        resource.processing_started_at = timezone.now()
+        resource.processing_completed_at = None
+        resource.save(
+            update_fields=[
+                'status',
+                'processing_error',
+                'processing_started_at',
+                'processing_completed_at',
+            ]
+        )
+
+        from processing.tasks import process_resource_for_catalogue
+        task = process_resource_for_catalogue.delay(str(resource.id))
+
+        return Response(
+            {"detail": "Catalogue creation started.", "task_id": task.id},
+            status=status.HTTP_202_ACCEPTED,
+        )
 
     @action(detail=True, methods=['post', 'delete'], permission_classes=[IsAuthenticated])
     def bookmark(self, request, pk=None):

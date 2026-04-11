@@ -12,6 +12,8 @@ interface TopicsListProps {
   topics: Topic[];
   hasCatalogue?: boolean;
   loading?: boolean;
+  creatingCatalogue?: boolean;
+  createError?: string | null;
   onCreateCatalogue?: () => void;
   onTopicClick: (topicId: string) => void;
 }
@@ -20,6 +22,8 @@ export default function TopicsList({
   topics,
   hasCatalogue = true,
   loading = false,
+  creatingCatalogue = false,
+  createError = null,
   onCreateCatalogue,
   onTopicClick,
 }: TopicsListProps) {
@@ -38,16 +42,21 @@ export default function TopicsList({
     <div className="bg-surface-container-low rounded-2xl p-6 border border-outline-variant/10">
       <h3 className="text-lg font-semibold text-on-surface mb-4">Topics & Sections</h3>
 
-      {loading ? (
+      {loading || creatingCatalogue ? (
         <div className="flex flex-col items-center justify-center py-8">
           <Loader2 className="w-5 h-5 text-primary animate-spin mb-2" />
-          <p className="text-sm text-on-surface-variant">Loading topics...</p>
+          <p className="text-sm text-on-surface-variant">
+            {creatingCatalogue ? 'Creating Catalogue...' : 'Loading topics...'}
+          </p>
         </div>
       ) : !hasCatalogue ? (
         <div className="text-center py-8">
           <div className="text-sm text-on-surface-variant mb-4">
             Catalogue not created yet.
           </div>
+          {createError && (
+            <div className="text-xs text-error mb-3">{createError}</div>
+          )}
           <button
             onClick={onCreateCatalogue}
             className="px-6 py-2.5 bg-gradient-to-r from-primary to-secondary text-on-primary-fixed rounded-full text-sm font-semibold hover:shadow-[0_0_30px_rgba(155,168,255,0.4)] transition-all font-jakarta"
