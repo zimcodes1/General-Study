@@ -46,7 +46,6 @@ interface Stats {
 	completed_catalogues: number;
 	average_score: number;
 	last_active_date: string | null;
-	total_reviews: number;
 	total_bookmarks: number;
 	courses_enrolled: number;
 }
@@ -211,8 +210,6 @@ export default function Profile() {
 						resource_approved: "upload",
 						bookmark_add: "bookmark",
 						bookmark_remove: "bookmark",
-						review_create: "complete",
-						review_update: "complete",
 						assessment_start: "quiz",
 						assessment_complete: "exam",
 						catalogue_complete: "complete",

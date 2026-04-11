@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useState } from 'react';
 import DashboardLayout from '../components/dashboard/DashboardLayout';
 import ResourceHeader from '../components/catalogue/ResourceHeader';
 import PrimaryActions from '../components/catalogue/PrimaryActions';
@@ -7,34 +7,28 @@ import TopicsList from '../components/catalogue/TopicsList';
 import { ArrowLeft, Search } from 'lucide-react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { tokenStorage } from '../utils/auth';
+import { catalogueAPI } from '../utils/learning/catalogueAPI';
+import { transformTopicsToStatusList, calculateProgress, hasQuiz } from '../utils/learning/progressUtils';
 import type { ResourceFileType } from '../components/dashboard/ResourceCard';
-
-type CatalogueData = {
-    id: string;
-    title: string;
-    summary?: string | null;
-    content_json?: {
-      subtopics?: string[];
-      summaries?: string[];
-      quiz_questions?: Array<Record<string, unknown>>;
-    } | null;
-};
+import type { CatalogueDetail } from '../utils/learning/types';
 
 type ResourceDetail = {
-    id: string;
-    title: string;
-    course_code?: string | null;
-    course_name?: string | null;
-    faculty_name?: string | null;
-    department_name?: string | null;
-    level?: string | null;
-    file_type?: string | null;
-    cover_image?: string | null;
-    rating_avg?: number | null;
-    rating_count?: number;
-    uploaded_by?: { full_name?: string | null };
-    created_at?: string | null;
-    catalogue?: CatalogueData | null;
+  id: string;
+  title: string;
+  course_code?: string | null;
+  course_name?: string | null;
+  faculty_name?: string | null;
+  department_name?: string | null;
+  level?: string | null;
+  file_type?: string | null;
+  file?: string | null;
+  file_url?: string | null;
+  cover_image?: string | null;
+  rating_avg?: number | null;
+  rating_count?: number;
+  uploaded_by?: { full_name?: string | null };
+  created_at?: string | null;
+  catalogue?: { id: string } | null;
 };
 
 export default function CatalogueOverview() {
@@ -43,6 +37,9 @@ export default function CatalogueOverview() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [resource, setResource] = useState<ResourceDetail | null>(null);
+  const [catalogue, setCatalogue] = useState<CatalogueDetail | null>(null);
+  const [progress, setProgress] = useState<CatalogueDetail['user_progress'] | null>(null);
+  const [catalogueLoading, setCatalogueLoading] = useState(false);
 
   const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:8000/api';
 
@@ -59,6 +56,7 @@ export default function CatalogueOverview() {
     return 'other';
   };
 
+  // Load resource
   useEffect(() => {
     const loadResource = async () => {
       if (!id) return;
@@ -87,32 +85,43 @@ export default function CatalogueOverview() {
     loadResource();
   }, [apiUrl, id]);
 
-  const topics = useMemo(() => {
-    const rawContent = resource?.catalogue?.content_json;
-    let content: CatalogueData['content_json'] | null = null;
+  // Load catalogue and progress when resource is loaded
+  useEffect(() => {
+    if (!resource?.catalogue?.id) return;
 
-    if (typeof rawContent === 'string') {
+    const loadCatalogueData = async () => {
+      setCatalogueLoading(true);
       try {
-        content = JSON.parse(rawContent) as CatalogueData['content_json'];
+        const catalogueData = await catalogueAPI.getCatalogue(resource.catalogue!.id);
+        setCatalogue(catalogueData);
+        setProgress(catalogueData.user_progress || null);
       } catch (err) {
-        console.error('Failed to parse catalogue content_json:', err);
+        console.error('Failed to load catalogue data:', err);
+        // Don't show error to user - old content_json fallback will be used
+      } finally {
+        setCatalogueLoading(false);
       }
-    } else if (rawContent && typeof rawContent === 'object') {
-      content = rawContent;
-    }
+    };
 
-    const subtopics = content?.subtopics ?? [];
-    if (!Array.isArray(subtopics)) return [];
+    loadCatalogueData();
+  }, [resource?.catalogue?.id]);
 
-    return subtopics
-      .filter((title): title is string => typeof title === 'string' && title.trim().length > 0)
-      .map((title, index) => ({
-        id: `topic-${index + 1}`,
-        title,
-        status: 'not-started' as const,
-        subtopics: [],
-      }));
-  }, [resource]);
+  // Transform topics into display format
+  const displayTopics = catalogue
+    ? transformTopicsToStatusList(
+        catalogue.topics,
+        progress?.completed_topics || []
+      ).map((topicStatus) => {
+        const fullTopic = catalogue.topics.find((t) => t.id === topicStatus.id);
+        return {
+          id: topicStatus.id,
+          title: topicStatus.title,
+          status: topicStatus.status,
+          order: topicStatus.order,
+          hasQuiz: fullTopic ? hasQuiz(fullTopic) : false,
+        };
+      })
+    : [];
 
   const hasCatalogue = !loading && Boolean(resource?.catalogue);
   const ratingValue =
@@ -121,23 +130,100 @@ export default function CatalogueOverview() {
     ? new Date(resource.created_at).toLocaleDateString()
     : undefined;
 
+  // Calculate progress
+  const progressCalc = catalogue
+    ? calculateProgress(catalogue.topics.length, progress?.completed_topics?.length || 0)
+    : { percentage: 0, display: '0%' };
+
   const progressData = {
-    percentageCompleted: 0,
-    lastStudiedSection: '',
-    totalTopics: topics.length,
-    completedTopics: 0,
+    percentageCompleted: progressCalc.percentage,
+    lastStudiedSection: catalogue?.topics[progress?.current_topic_index || 0]?.title || '',
+    totalTopics: catalogue?.topics.length || 0,
+    completedTopics: progress?.completed_topics?.length || 0,
   };
 
   const handleContinueLearning = () => {
-    console.log('Continue learning');
+    if (!catalogue || displayTopics.length === 0) return;
+    const firstIncompleteTopic =
+      displayTopics.find((t) => t.status !== 'completed') || displayTopics[0];
+    navigate(
+      `/learn/${resource?.catalogue?.id}/${firstIncompleteTopic.id}`
+    );
   };
 
-  const handleDownload = () => {
-    console.log('Download resource');
+  const handleDownload = async () => {
+    if (!resource || !id) return;
+    
+    try {
+      const accessToken = tokenStorage.getAccessToken();
+      const fileField = resource.file || resource.file_url;
+      
+      if (!fileField) {
+        alert('This resource does not have a downloadable file.');
+        return;
+      }
+      
+      // Determine the download URL
+      let downloadUrl = fileField;
+      if (fileField && !fileField.startsWith('http')) {
+        // Construct the full URL for media files
+        const baseUrl = apiUrl.replace('/api', '');
+        downloadUrl = `${baseUrl}/media/${fileField}`;
+      }
+      
+      console.log('Downloading from:', downloadUrl);
+      
+      // Fetch the file
+      const response = await fetch(downloadUrl, {
+        headers: accessToken ? { Authorization: `Bearer ${accessToken}` } : undefined,
+      });
+      
+      if (!response.ok) {
+        console.error(`Download failed with status ${response.status}:`, response.statusText);
+        throw new Error(`Server returned ${response.status}: ${response.statusText}`);
+      }
+      
+      // Get filename from resource title and file extension
+      const contentDisposition = response.headers.get('content-disposition');
+      let filename = resource.title || 'download';
+      
+      // Extract extension from fileField if available
+      const extension = fileField.split('.').pop() || 'pdf';
+      if (!filename.includes('.')) {
+        filename = `${filename}.${extension}`;
+      }
+      
+      if (contentDisposition) {
+        const filenamePart = contentDisposition.split('filename=')[1];
+        if (filenamePart) {
+          filename = filenamePart.replace(/[";]/g, '');
+        }
+      }
+      
+      // Create blob and trigger download
+      const blob = await response.blob();
+      const url = window.URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = filename;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      window.URL.revokeObjectURL(url);
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'Failed to download resource';
+      console.error('Download error:', err);
+      alert(`Download Error: ${message}`);
+    }
   };
 
   const handleTakeQuiz = () => {
-    console.log('Take quiz');
+    if (!resource?.id) return;
+    if (!catalogue || catalogue.topics.every((topic) => !topic.quiz_questions?.length)) {
+      alert('This catalogue does not have any quiz questions yet.');
+      return;
+    }
+    navigate(`/catalogue/${resource.id}/quiz`);
   };
 
   const handleTakeExam = () => {
@@ -145,11 +231,8 @@ export default function CatalogueOverview() {
   };
 
   const handleTopicClick = (topicId: string) => {
-    console.log('Topic clicked:', topicId);
-  };
-
-  const handleSubtopicClick = (topicId: string, subtopicId: string) => {
-    console.log('Subtopic clicked:', topicId, subtopicId);
+    if (!resource?.catalogue?.id) return;
+    navigate(`/learn/${resource.catalogue.id}/${topicId}`);
   };
 
   const handleCreateCatalogue = () => {
@@ -189,7 +272,7 @@ export default function CatalogueOverview() {
               title={resource.title}
               courseCode={resource.course_code ?? undefined}
               courseName={resource.course_name ?? undefined}
-              description={resource.catalogue?.summary ?? 'No summary available yet.'}
+              description={catalogue?.summary ?? 'No summary available yet.'}
               coverImage={resource.cover_image ?? undefined}
               fileType={normalizeFileType(resource.file_type)}
               rating={ratingValue}
@@ -209,11 +292,11 @@ export default function CatalogueOverview() {
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
             <div className="lg:col-span-2">
               <TopicsList
-                topics={topics}
+                topics={displayTopics}
                 hasCatalogue={hasCatalogue}
+                loading={catalogueLoading}
                 onCreateCatalogue={handleCreateCatalogue}
                 onTopicClick={handleTopicClick}
-                onSubtopicClick={handleSubtopicClick}
               />
             </div>
 

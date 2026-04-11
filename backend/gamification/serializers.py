@@ -3,7 +3,7 @@ from users.models import User
 from gamification.models import Gamification
 from progress.models import Progress
 from assessments.models import Assessment
-from django.db.models import Avg, Count
+from django.db.models import Avg
 
 
 class UserStatsSerializer(serializers.Serializer):
@@ -14,7 +14,6 @@ class UserStatsSerializer(serializers.Serializer):
     last_active_date = serializers.SerializerMethodField()
     completed_catalogues = serializers.SerializerMethodField()
     average_score = serializers.SerializerMethodField()
-    total_reviews = serializers.SerializerMethodField()
     total_bookmarks = serializers.SerializerMethodField()
     courses_enrolled = serializers.SerializerMethodField()
     
@@ -45,10 +44,6 @@ class UserStatsSerializer(serializers.Serializer):
         ).aggregate(avg_score=Avg('score'))['avg_score']
         
         return round(avg, 2) if avg else 0.0
-    
-    def get_total_reviews(self, obj):
-        """Count total reviews given by user."""
-        return obj.reviews.count()
     
     def get_total_bookmarks(self, obj):
         """Count total bookmarks."""

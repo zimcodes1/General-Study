@@ -5,15 +5,13 @@ from resources.models import Resource
 
 
 class UserAction(models.Model):
-    """Track user actions for activity log (uploads, bookmarks, reviews, quiz completions, etc.)"""
+    """Track user actions for activity log (uploads, bookmarks, quiz completions, etc.)"""
     
     ACTION_TYPES = [
         ('resource_upload', 'Resource Upload'),
         ('resource_approved', 'Resource Approved'),
         ('bookmark_add', 'Added Bookmark'),
         ('bookmark_remove', 'Removed Bookmark'),
-        ('review_create', 'Created Review'),
-        ('review_update', 'Updated Review'),
         ('assessment_start', 'Assessment Started'),
         ('assessment_complete', 'Assessment Completed'),
         ('catalogue_complete', 'Catalogue Completed'),

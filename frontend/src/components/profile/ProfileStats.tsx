@@ -6,7 +6,6 @@ interface Stats {
   completed_catalogues: number;
   average_score: number;
   last_active_date?: string | null;
-  total_reviews?: number;
   total_bookmarks?: number;
   courses_enrolled?: number;
 }
