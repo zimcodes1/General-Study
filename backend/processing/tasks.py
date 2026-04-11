@@ -12,7 +12,7 @@ from django.core.mail import send_mail
 from django.conf import settings
 
 from resources.models import Resource
-from catalogues.models import Catalogue
+from catalogues.models import Catalogue, Topic, QuizQuestion
 from processing.file_extractors import extract_text_from_file
 from processing.groq_service import GroqService
 from processing.validators import validate_groq_response
@@ -174,6 +174,9 @@ def create_catalogue(self, resource_id: str, groq_data: Dict[str, Any]) -> Dict[
         )
         logger.warning(f"[CATALOGUE] ✅ Catalogue created: {catalogue.id}")
 
+        # Create Topics and Quiz Questions
+        _populate_topics_from_groq(catalogue, groq_data)
+
         # Update resource status to pending (awaiting admin approval)
         logger.warning(f"[CATALOGUE] 📊 Updating resource status to 'pending'...")
         resource.status = "pending"
@@ -198,6 +201,59 @@ def create_catalogue(self, resource_id: str, groq_data: Dict[str, Any]) -> Dict[
         logger.error(f"[CATALOGUE] ❌ TASK FAILED: {e}", exc_info=True)
         _notify_admin_failure(resource_id, f"Catalogue creation failed: {str(e)}")
         raise
+
+
+@shared_task(bind=True, max_retries=0)
+def process_resource_for_catalogue(self, resource_id: str) -> Dict[str, str]:
+    """
+    Process an existing resource to create a catalogue.
+    Uses existing raw_text when available, otherwise extracts from file.
+    """
+    logger.warning(f"[PIPELINE] ⚠️  TASK STARTED: process_resource_for_catalogue for resource {resource_id}")
+    try:
+        resource = Resource.objects.get(id=resource_id)
+        logger.warning(f"[PIPELINE] ✅ Resource retrieved: {resource.title}")
+
+        if not resource.raw_text:
+            if not resource.file:
+                raise ValueError("Resource has no extracted text or file to process")
+
+            logger.warning(f"[PIPELINE] 🔄 Extracting text from file...")
+            extract_text_from_resource(resource_id)
+
+        logger.warning(f"[PIPELINE] 🔄 Processing with Groq API...")
+        groq_result = chunk_and_process_with_groq(resource_id)
+
+        logger.warning(f"[PIPELINE] 🔄 Creating catalogue...")
+        catalogue_result = create_catalogue(resource_id, groq_result)
+
+        logger.warning(f"[PIPELINE] 🎉 ✅ PIPELINE COMPLETE FOR {resource_id}")
+        return {
+            "status": "complete",
+            "resource_id": str(resource_id),
+            "catalogue_id": catalogue_result.get("catalogue_id"),
+        }
+
+    except Exception as e:
+        logger.error(f"[PIPELINE] 💥 PIPELINE FAILED for {resource_id}: {e}", exc_info=True)
+        try:
+            resource = Resource.objects.get(id=resource_id)
+            resource.status = "failed"
+            resource.processing_error = f"Processing failed: {str(e)}"
+            resource.processing_completed_at = timezone.now()
+            resource.save(
+                update_fields=['status', 'processing_error', 'processing_completed_at']
+            )
+            logger.warning(f"[PIPELINE] 📝 Resource marked as failed: {resource_id}")
+        except Exception as update_err:
+            logger.error(f"[PIPELINE] ❌ Failed to update resource status: {update_err}", exc_info=True)
+
+        _notify_admin_failure(resource_id, f"Pipeline failed: {str(e)}")
+        return {
+            "status": "failed",
+            "resource_id": str(resource_id),
+            "error": str(e),
+        }
 
 
 @shared_task(bind=True, max_retries=0)
@@ -369,3 +425,48 @@ Catalogue ID: {catalogue.id}
 
     except Exception as e:
         logger.error(f"Failed to send admin success notification: {e}")
+
+
+def _populate_topics_from_groq(catalogue: Catalogue, groq_data: Dict[str, Any]) -> None:
+    subtopics = groq_data.get('subtopics', [])
+    summaries = groq_data.get('summaries', [])
+    quiz_questions = groq_data.get('quiz_questions', [])
+
+    if not subtopics:
+        return
+
+    created_topics = []
+    for order, subtopic_title in enumerate(subtopics):
+        summary = summaries[order] if order < len(summaries) else ''
+        topic, _ = Topic.objects.get_or_create(
+            catalogue=catalogue,
+            order=order,
+            defaults={
+                'title': subtopic_title,
+                'content': summary,
+                'summary': summary,
+            }
+        )
+        created_topics.append(topic)
+
+    if quiz_questions and created_topics:
+        questions_per_topic = max(1, len(quiz_questions) // len(created_topics))
+        for question_order, question_data in enumerate(quiz_questions):
+            topic_index = min(question_order // questions_per_topic, len(created_topics) - 1)
+            topic = created_topics[topic_index]
+
+            question_text = question_data.get('question', '')
+            options = question_data.get('options', [])
+            correct_answer = question_data.get('answer', '')
+            explanation = question_data.get('explanation', '')
+
+            QuizQuestion.objects.get_or_create(
+                topic=topic,
+                question=question_text,
+                defaults={
+                    'options': options,
+                    'correct_answer': correct_answer,
+                    'explanation': explanation,
+                    'order': question_order % questions_per_topic,
+                }
+            )
