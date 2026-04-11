@@ -102,7 +102,9 @@ export default function CatalogueQuiz() {
   const totalQuestions = questions.length;
   const currentQuestion = questions[currentQuestionIndex];
   const answeredCount = Object.keys(answers).length;
-  const canSubmit = totalQuestions > 0 && answeredCount === totalQuestions;
+  const isLastQuestion = currentQuestionIndex === totalQuestions - 1;
+  const isCurrentAnswered = answers[currentQuestionIndex] !== undefined;
+  const canSubmit = totalQuestions > 0 && answeredCount === totalQuestions && isLastQuestion;
 
   const handleAnswerSelect = (answerIndex: number) => {
     setAnswers({ ...answers, [currentQuestionIndex]: answerIndex });
@@ -241,7 +243,7 @@ export default function CatalogueQuiz() {
         totalQuestions={totalQuestions}
         answeredQuestions={Object.keys(answers).map(Number)}
         onPrevious={currentQuestionIndex > 0 ? handlePrevious : undefined}
-        onNext={currentQuestionIndex < totalQuestions - 1 ? handleNext : undefined}
+        onNext={currentQuestionIndex < totalQuestions - 1 && isCurrentAnswered ? handleNext : undefined}
         onSubmit={canSubmit ? handleSubmit : undefined}
         isExamMode={false}
       />

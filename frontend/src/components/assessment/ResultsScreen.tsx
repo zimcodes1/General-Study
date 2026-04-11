@@ -1,5 +1,5 @@
 import { Trophy, RotateCcw, Eye, ArrowLeft, CheckCircle2, XCircle } from 'lucide-react';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import QuestionArea from './QuestionArea';
 
 interface Question {
@@ -51,10 +51,39 @@ export default function ResultsScreen({
     return 'Keep practicing! 📚';
   };
 
-  const incorrectQuestions = questions.filter((_, index) => userAnswers[index] !== questions[index].correctAnswer);
+  const incorrectQuestions = questions.filter(
+    (_, index) => userAnswers[index] !== questions[index].correctAnswer
+  );
+
+  useEffect(() => {
+    if (showReview) {
+      setReviewIndex(0);
+    }
+  }, [showReview]);
+
+  useEffect(() => {
+    if (reviewIndex >= incorrectQuestions.length && incorrectQuestions.length > 0) {
+      setReviewIndex(incorrectQuestions.length - 1);
+    }
+  }, [incorrectQuestions.length, reviewIndex]);
 
   if (showReview) {
     const currentQuestion = incorrectQuestions[reviewIndex];
+    if (!currentQuestion) {
+      return (
+        <div className="min-h-screen bg-surface flex items-center justify-center px-4 py-12">
+          <div className="bg-surface-container-low rounded-3xl p-8 border border-outline-variant/10 text-center">
+            <p className="text-on-surface font-semibold mb-2">No incorrect answers to review</p>
+            <button
+              onClick={() => setShowReview(false)}
+              className="mt-4 px-6 py-2 bg-surface-container text-on-surface rounded-full hover:bg-surface-container-high transition-all font-jakarta"
+            >
+              Back to Results
+            </button>
+          </div>
+        </div>
+      );
+    }
     const originalIndex = questions.findIndex(q => q.id === currentQuestion.id);
 
     return (
