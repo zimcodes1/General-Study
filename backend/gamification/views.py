@@ -19,11 +19,9 @@ def user_stats(request):
     - last_active_date: Last activity date
     - completed_catalogues: Number of completed learning paths
     - average_score: Average assessment score
-    - total_reviews: Number of reviews given
     - total_bookmarks: Number of bookmarked resources
     - courses_enrolled: Number of courses user enrolled in
     """
     user = request.user
     serializer = UserStatsSerializer(user)
     return Response(serializer.data, status=status.HTTP_200_OK)
-

@@ -3,7 +3,7 @@ from django.dispatch import receiver
 from django.utils import timezone
 from datetime import timedelta
 
-from resources.models import Resource, Bookmark, Review
+from resources.models import Resource, Bookmark
 from users.models import User
 from assessments.models import Assessment
 from .models import UserAction
@@ -69,27 +69,6 @@ def track_bookmark_remove(sender, instance, **kwargs):
         resource=instance.resource,
         metadata={'resource_title': instance.resource.title}
     )
-
-
-@receiver(post_save, sender=Review)
-def track_review_action(sender, instance, created, **kwargs):
-    """Create UserAction when a review is created or updated"""
-    action_type = 'review_create' if created else 'review_update'
-    
-    UserAction.objects.create(
-        user=instance.user,
-        action_type=action_type,
-        resource=instance.resource,
-        metadata={
-            'rating': instance.rating,
-            'comment': instance.comment[:100] if instance.comment else ''
-        }
-    )
-    
-    if created:
-        # Award points for review
-        instance.user.points += 5
-        instance.user.save(update_fields=['points'])
 
 
 @receiver(post_save, sender=Assessment)

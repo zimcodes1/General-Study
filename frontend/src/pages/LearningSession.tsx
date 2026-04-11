@@ -1,152 +1,160 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import LearningHeader from '../components/learning/LearningHeader';
 import ContentArea from '../components/learning/ContentArea';
 import NavigationControls from '../components/learning/NavigationControls';
 import QuizSection from '../components/learning/QuizSection';
 import CompletionScreen from '../components/learning/CompletionScreen';
+import { AlertCircle, Loader2 } from 'lucide-react';
+import { catalogueAPI } from '../utils/learning/catalogueAPI';
+import { getTopicIndex, getNextTopic, hasQuiz } from '../utils/learning/progressUtils';
+import type { CatalogueDetail, Topic } from '../utils/learning/types';
 
 type ViewMode = 'content' | 'quiz' | 'completion';
 
+interface LoadingState {
+  active: boolean;
+  error: string | null;
+}
+
 export default function LearningSession() {
   const navigate = useNavigate();
-  const { catalogueId } = useParams();
-  
-  const [currentSubtopicIndex, setCurrentSubtopicIndex] = useState(0);
+  const { catalogueId, topicId } = useParams<{
+    catalogueId: string;
+    topicId: string;
+  }>();
+
   const [viewMode, setViewMode] = useState<ViewMode>('content');
+  const [catalogue, setCatalogue] = useState<CatalogueDetail | null>(null);
+  const [progress, setProgress] = useState<CatalogueDetail['user_progress'] | null>(null);
+  const [loadingState, setLoadingState] = useState<LoadingState>({
+    active: true,
+    error: null,
+  });
+  const [quizSubmitting, setQuizSubmitting] = useState(false);
+  const [quizScore, setQuizScore] = useState<{ correct: number; total: number } | null>(null);
+  const [ratingValue, setRatingValue] = useState<number | null>(null);
+  const [ratingSubmitted, setRatingSubmitted] = useState(false);
+  const [ratingSubmitting, setRatingSubmitting] = useState(false);
+  const [ratingError, setRatingError] = useState<string | null>(null);
 
-  // Mock data - replace with actual data fetching
-  const topicData = {
-    title: 'Neural Networks',
-    subtopics: [
-      {
-        id: '3-1',
-        title: 'Perceptrons',
-        content: `
-          <h2>Understanding Perceptrons</h2>
-          <p>A perceptron is the simplest form of a neural network. It's a single-layer neural network that takes multiple inputs and produces a single output.</p>
-          
-          <h3>Key Components</h3>
-          <ul>
-            <li><strong>Inputs:</strong> The perceptron receives multiple input values (x₁, x₂, ..., xₙ)</li>
-            <li><strong>Weights:</strong> Each input has an associated weight (w₁, w₂, ..., wₙ)</li>
-            <li><strong>Bias:</strong> An additional parameter that helps adjust the output</li>
-            <li><strong>Activation Function:</strong> Determines the output based on the weighted sum</li>
-          </ul>
+  // When navigating between topics, always start on content view.
+  useEffect(() => {
+    setViewMode('content');
+    setQuizScore(null);
+  }, [topicId]);
 
-          <h3>How It Works</h3>
-          <p>The perceptron computes a weighted sum of its inputs, adds the bias, and then applies an activation function to produce the output.</p>
-          
-          <p>The mathematical formula is:</p>
-          <p><code>output = activation(Σ(wᵢ × xᵢ) + bias)</code></p>
+  useEffect(() => {
+    setRatingValue(null);
+    setRatingSubmitted(false);
+    setRatingSubmitting(false);
+    setRatingError(null);
+  }, [catalogueId]);
 
-          <h3>Applications</h3>
-          <p>Perceptrons are used for binary classification tasks, where the goal is to separate data into two classes. While simple, they form the foundation for more complex neural networks.</p>
-        `,
-        hasQuiz: true,
-      },
-      {
-        id: '3-2',
-        title: 'Activation Functions',
-        content: `
-          <h2>Activation Functions in Neural Networks</h2>
-          <p>Activation functions introduce non-linearity into neural networks, allowing them to learn complex patterns.</p>
-          
-          <h3>Common Activation Functions</h3>
-          <ul>
-            <li><strong>Sigmoid:</strong> Maps values to range (0, 1), useful for probability outputs</li>
-            <li><strong>ReLU:</strong> Returns max(0, x), most popular in hidden layers</li>
-            <li><strong>Tanh:</strong> Maps values to range (-1, 1), zero-centered</li>
-            <li><strong>Softmax:</strong> Used in output layer for multi-class classification</li>
-          </ul>
+  // Load catalogue and progress
+  useEffect(() => {
+    if (!catalogueId) return;
 
-          <h3>Why They Matter</h3>
-          <p>Without activation functions, neural networks would only be able to learn linear relationships, severely limiting their capabilities.</p>
-        `,
-        hasQuiz: true,
-      },
-      {
-        id: '3-3',
-        title: 'Backpropagation',
-        content: `
-          <h2>Backpropagation Algorithm</h2>
-          <p>Backpropagation is the key algorithm for training neural networks. It efficiently computes gradients of the loss function with respect to the network's weights.</p>
-          
-          <h3>The Process</h3>
-          <ol>
-            <li><strong>Forward Pass:</strong> Input data flows through the network to produce an output</li>
-            <li><strong>Calculate Loss:</strong> Compare the output with the expected result</li>
-            <li><strong>Backward Pass:</strong> Propagate the error backward through the network</li>
-            <li><strong>Update Weights:</strong> Adjust weights to minimize the loss</li>
-          </ol>
+    const loadData = async () => {
+      try {
+        setLoadingState({ active: true, error: null });
+        const catalogueData = await catalogueAPI.getCatalogue(catalogueId);
+        setCatalogue(catalogueData);
+        setProgress(catalogueData.user_progress || null);
+      } catch (err) {
+        const message = err instanceof Error ? err.message : 'Failed to load learning data';
+        setLoadingState({ active: false, error: message });
+      } finally {
+        setLoadingState({ active: false, error: null });
+      }
+    };
 
-          <h3>Gradient Descent</h3>
-          <p>Backpropagation uses gradient descent to update weights. The learning rate determines how much to adjust weights in each iteration.</p>
-        `,
-        hasQuiz: false,
-      },
-    ],
-  };
+    loadData();
+  }, [catalogueId]);
 
-  const quizQuestions = [
-    {
-      id: 'q1',
-      question: 'What is the main purpose of an activation function in a perceptron?',
-      options: [
-        'To store the input values',
-        'To introduce non-linearity into the model',
-        'To calculate the weights',
-        'To normalize the data',
-      ],
-      correctAnswer: 1,
-    },
-    {
-      id: 'q2',
-      question: 'Which component is NOT part of a basic perceptron?',
-      options: [
-        'Inputs',
-        'Weights',
-        'Convolutional layers',
-        'Activation function',
-      ],
-      correctAnswer: 2,
-    },
-  ];
+  // Get current topic
+  const currentTopic: Topic | null = catalogue && topicId
+    ? catalogue.topics.find((t) => t.id === topicId) || null
+    : null;
 
-  const currentSubtopic = topicData.subtopics[currentSubtopicIndex];
-  const totalSubtopics = topicData.subtopics.length;
-  const hasPrevious = currentSubtopicIndex > 0;
-  const isLastSubtopic = currentSubtopicIndex === totalSubtopics - 1;
+  const currentTopicIndex = catalogue && topicId ? getTopicIndex(catalogue.topics, topicId) : -1;
+  const totalTopics = catalogue?.topics.length || 0;
+  const nextTopic = catalogue ? getNextTopic(catalogue.topics, currentTopicIndex) : null;
+  const isLastTopic = currentTopicIndex === totalTopics - 1;
+  const topicHasQuiz = currentTopic ? hasQuiz(currentTopic) : false;
 
   const handleExit = () => {
     navigate(`/catalogue/${catalogueId}`);
   };
 
-  const handleNext = () => {
-    if (currentSubtopic.hasQuiz && viewMode === 'content') {
+  const handleNext = async () => {
+    if (!currentTopic || !catalogueId) return;
+
+    if (topicHasQuiz && viewMode === 'content') {
       setViewMode('quiz');
-    } else if (isLastSubtopic) {
+      return;
+    }
+
+    if (!topicHasQuiz) {
+      const alreadyCompleted = progress?.completed_topics?.includes(currentTopic.id);
+      if (!alreadyCompleted) {
+        try {
+          const result = await catalogueAPI.completeTopic(catalogueId, currentTopic.id);
+          setProgress(result.progress);
+        } catch (err) {
+          console.error('Failed to complete topic:', err);
+          setLoadingState({
+            active: false,
+            error: err instanceof Error ? err.message : 'Failed to complete topic',
+          });
+          return;
+        }
+      }
+    }
+
+    if (isLastTopic) {
       setViewMode('completion');
-    } else {
-      setCurrentSubtopicIndex(currentSubtopicIndex + 1);
-      setViewMode('content');
+    } else if (nextTopic) {
+      navigate(`/learn/${catalogueId}/${nextTopic.id}`);
     }
   };
 
   const handlePrevious = () => {
-    if (currentSubtopicIndex > 0) {
-      setCurrentSubtopicIndex(currentSubtopicIndex - 1);
-      setViewMode('content');
+    // Navigate to previous topic
+    const prevTopic = catalogue?.topics[currentTopicIndex - 1];
+    if (prevTopic) {
+      navigate(`/learn/${catalogueId}/${prevTopic.id}`);
     }
   };
 
-  const handleQuizComplete = (score: number) => {
-    console.log('Quiz completed with score:', score);
-    if (isLastSubtopic) {
-      setViewMode('completion');
-    } else {
-      setCurrentSubtopicIndex(currentSubtopicIndex + 1);
-      setViewMode('content');
+  const handleQuizComplete = async (answers: Record<string, string>, score: { correct: number; total: number }) => {
+    if (!currentTopic || !catalogueId) return;
+
+    setQuizSubmitting(true);
+    try {
+      const result = await catalogueAPI.submitQuiz(catalogueId, currentTopic.id, answers);
+      
+      // Update progress
+      setProgress(result.progress);
+      setQuizScore(score);
+
+      // Move to next topic or completion
+      if (isLastTopic) {
+        setViewMode('completion');
+      } else if (nextTopic) {
+        // Small delay before navigating
+        setTimeout(() => {
+          navigate(`/learn/${catalogueId}/${nextTopic.id}`);
+        }, 1500);
+      }
+    } catch (err) {
+      console.error('Failed to submit quiz:', err);
+      setLoadingState({
+        active: false,
+        error: err instanceof Error ? err.message : 'Failed to submit quiz',
+      });
+    } finally {
+      setQuizSubmitting(false);
     }
   };
 
@@ -154,35 +162,140 @@ export default function LearningSession() {
     navigate(`/catalogue/${catalogueId}`);
   };
 
+  const handleSubmitRating = async () => {
+    if (!catalogueId) return;
+    if (!ratingValue) {
+      setRatingError('Please select a rating to continue.');
+      return;
+    }
+
+    setRatingSubmitting(true);
+    setRatingError(null);
+    try {
+      await catalogueAPI.rateCatalogue(catalogueId, ratingValue);
+      setRatingSubmitted(true);
+    } catch (err) {
+      setRatingError(err instanceof Error ? err.message : 'Failed to submit rating');
+    } finally {
+      setRatingSubmitting(false);
+    }
+  };
+
+  // Loading state
+  if (loadingState.active) {
+    return (
+      <div className="min-h-screen bg-surface flex flex-col items-center justify-center">
+        <Loader2 className="w-8 h-8 text-primary animate-spin mb-4" />
+        <p className="text-on-surface-variant">Loading learning session...</p>
+      </div>
+    );
+  }
+
+  // Error state
+  if (loadingState.error) {
+    return (
+      <div className="min-h-screen bg-surface flex flex-col items-center justify-center px-4">
+        <AlertCircle className="w-12 h-12 text-error mb-4" />
+        <h1 className="text-2xl font-bold text-on-surface mb-2">Unable to Load Session</h1>
+        <p className="text-on-surface-variant text-center mb-6 max-w-md">
+          {loadingState.error}
+        </p>
+        <button
+          onClick={handleExit}
+          className="px-6 py-2 bg-primary text-on-primary rounded-lg hover:shadow-lg transition-all"
+        >
+          Return to Catalogue
+        </button>
+      </div>
+    );
+  }
+
+  // Validation
+  if (!catalogue || !currentTopic) {
+    if (!catalogue) {
+      return (
+        <div className="min-h-screen bg-surface flex flex-col items-center justify-center px-4">
+          <Loader2 className="w-12 h-12 text-primary animate-spin mb-4" />
+          <h1 className="text-2xl font-bold text-on-surface mb-2">Loading Catalogue...</h1>
+        </div>
+      );
+    }
+
+    // Topic not found, offer to navigate to first topic
+    return (
+      <div className="min-h-screen bg-surface flex flex-col items-center justify-center px-4">
+        <AlertCircle className="w-12 h-12 text-error mb-4" />
+        <h1 className="text-2xl font-bold text-on-surface mb-2">Topic Not Found</h1>
+        <p className="text-on-surface-variant text-center mb-6 max-w-md">
+          The topic you're looking for doesn't exist. Let's start with the first topic!
+        </p>
+        {catalogue.topics.length > 0 ? (
+          <button
+            onClick={() => navigate(`/learn/${catalogueId}/${catalogue.topics[0].id}`)}
+            className="px-6 py-2 bg-primary text-on-primary rounded-lg hover:shadow-lg transition-all"
+          >
+            Start Learning - {catalogue.topics[0].title}
+          </button>
+        ) : (
+          <button
+            onClick={handleExit}
+            className="px-6 py-2 bg-primary text-on-primary rounded-lg hover:shadow-lg transition-all"
+          >
+            Return to Catalogue
+          </button>
+        )}
+      </div>
+    );
+  }
+
+  // Completion screen
   if (viewMode === 'completion') {
+    const pointsEarned = progress?.points_earned || 0;
+    const nextTopicTitle = nextTopic?.title || 'More Lectures';
+    
     return (
       <div className="min-h-screen bg-surface">
         <CompletionScreen
-          topicTitle={topicData.title}
-          pointsEarned={150}
-          nextTopicTitle="Deep Learning"
+          topicTitle={catalogue.title}
+          pointsEarned={pointsEarned}
+          nextTopicTitle={nextTopicTitle}
           onContinue={handleContinueAfterCompletion}
-          quizAvailable={false}
+          quizAvailable={nextTopic ? hasQuiz(nextTopic) : false}
+          ratingValue={ratingValue}
+          ratingSubmitted={ratingSubmitted}
+          ratingSubmitting={ratingSubmitting}
+          ratingError={ratingError}
+          onRatingSelect={(value) => {
+            setRatingValue(value);
+            setRatingError(null);
+          }}
+          onSubmitRating={handleSubmitRating}
         />
       </div>
     );
   }
 
+  const hasPrevious = currentTopicIndex > 0;
+
   return (
     <div className="min-h-screen bg-surface flex flex-col">
       <LearningHeader
-        topicTitle={topicData.title}
-        subtopicTitle={currentSubtopic.title}
-        currentPosition={currentSubtopicIndex + 1}
-        totalSections={totalSubtopics}
+        topicTitle={catalogue.title}
+        subtopicTitle={currentTopic.title}
+        currentPosition={currentTopicIndex + 1}
+        totalSections={totalTopics}
         onExit={handleExit}
       />
 
       <div className="flex-1 overflow-y-auto pb-24">
         {viewMode === 'content' ? (
-          <ContentArea content={currentSubtopic.content} />
+          <ContentArea content={currentTopic.content} />
         ) : (
-          <QuizSection questions={quizQuestions} onComplete={handleQuizComplete} />
+          <QuizSection
+            questions={currentTopic.quiz_questions}
+            onComplete={handleQuizComplete}
+            isSubmitting={quizSubmitting}
+          />
         )}
       </div>
 
@@ -191,7 +304,7 @@ export default function LearningSession() {
           onPrevious={hasPrevious ? handlePrevious : undefined}
           onNext={handleNext}
           hasPrevious={hasPrevious}
-          nextLabel={currentSubtopic.hasQuiz ? 'Take Quiz' : isLastSubtopic ? 'Complete' : 'Next'}
+          nextLabel={topicHasQuiz ? 'Take Quiz' : isLastTopic ? 'Complete Course' : 'Next Topic'}
         />
       )}
     </div>

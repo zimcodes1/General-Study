@@ -18,9 +18,16 @@ class UserMinimalSerializer(serializers.ModelSerializer):
 
 
 class CatalogueSerializer(serializers.ModelSerializer):
-    """Serializer for Catalogue objects."""
+    """Serializer for Catalogue objects with topics."""
 
     resource_title = serializers.CharField(source='resource.title', read_only=True)
+    topics = serializers.SerializerMethodField()
+
+    def get_topics(self, obj):
+        """Get topics for this catalogue"""
+        from catalogues.serializers import TopicSerializer
+        topics = obj.topics.all().order_by('order')
+        return TopicSerializer(topics, many=True).data
 
     class Meta:
         model = Catalogue
@@ -30,6 +37,7 @@ class CatalogueSerializer(serializers.ModelSerializer):
             'title',
             'summary',
             'content_json',
+            'topics',
             'created_at',
             'updated_at',
         ]
@@ -39,6 +47,7 @@ class CatalogueSerializer(serializers.ModelSerializer):
             'title',
             'summary',
             'content_json',
+            'topics',
             'created_at',
             'updated_at',
         ]
@@ -193,6 +202,8 @@ class ResourceDetailSerializer(serializers.ModelSerializer):
             'department_name',
             'level',
             'file_type',
+            'file',
+            'file_url',
             'cover_image',
             'attribution',
             'status',

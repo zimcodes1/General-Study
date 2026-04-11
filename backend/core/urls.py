@@ -16,6 +16,8 @@ Including another URLconf
 """
 from django.contrib import admin
 from django.urls import path, include
+from django.conf import settings
+from django.conf.urls.static import static
 from rest_framework.routers import SimpleRouter
 from resources.views import ResourceViewSet
 
@@ -28,6 +30,13 @@ urlpatterns = [
     path('api/', include(router.urls)),
     path('api/users/', include('users.urls')),
     path('api/', include('activity.urls')),
+    path('api/', include('catalogues.urls')),
+    # NOTE: keep catalogues before progress so /api/progress/submit_quiz/ and
+    # /api/progress/current_catalogue/ are not swallowed by the progress router.
     path('api/', include('progress.urls')),
     path('api/users/', include('gamification.urls')),
 ]
+
+# Serve media files in development
+if settings.DEBUG:
+    urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
