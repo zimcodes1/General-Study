@@ -57,6 +57,7 @@ class Resource(models.Model):
     raw_text = models.TextField(blank=True, null=True, help_text='Extracted text from file')
     processing_started_at = models.DateTimeField(null=True, blank=True)
     processing_completed_at = models.DateTimeField(null=True, blank=True)
+    last_processed_at = models.DateTimeField(null=True, blank=True, help_text='Last time processing was attempted')
     processing_error = models.TextField(blank=True, null=True, help_text='Error message if processing failed')
     
     rating_avg = models.FloatField(default=0.0)

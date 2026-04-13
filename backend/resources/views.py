@@ -211,11 +211,14 @@ class ResourceViewSet(viewsets.ModelViewSet):
                 status=status.HTTP_400_BAD_REQUEST,
             )
 
-        if resource.status == 'processing':
-            return Response(
-                {"detail": "Catalogue creation already in progress."},
-                status=status.HTTP_409_CONFLICT,
-            )
+        # Check if processing is stuck (more than 2 minutes since last attempt)
+        if resource.status == 'processing' and resource.last_processed_at:
+            time_since_last_process = timezone.now() - resource.last_processed_at
+            if time_since_last_process.total_seconds() < 120:
+                return Response(
+                    {"detail": "Catalogue creation already in progress."},
+                    status=status.HTTP_409_CONFLICT,
+                )
 
         if not resource.raw_text and not resource.file:
             return Response(
@@ -227,12 +230,14 @@ class ResourceViewSet(viewsets.ModelViewSet):
         resource.processing_error = None
         resource.processing_started_at = timezone.now()
         resource.processing_completed_at = None
+        resource.last_processed_at = timezone.now()
         resource.save(
             update_fields=[
                 'status',
                 'processing_error',
                 'processing_started_at',
                 'processing_completed_at',
+                'last_processed_at',
             ]
         )
 
