@@ -47,8 +47,8 @@ class UserSerializer(serializers.ModelSerializer):
         model = User
         fields = ['id', 'email', 'full_name', 'phone', 'school', 'faculty', 'department', 
                   'degree_level', 'current_level', 'courses', 'points', 'streak', 
-                  'last_active_date', 'created_at']
-        read_only_fields = ['id', 'points', 'streak', 'last_active_date', 'created_at']
+                  'last_active_date', 'created_at', 'is_staff']
+        read_only_fields = ['id', 'points', 'streak', 'last_active_date', 'created_at', 'is_staff']
 
 class UserUpdateSerializer(serializers.ModelSerializer):
     faculty_id = serializers.UUIDField(write_only=True, required=False)

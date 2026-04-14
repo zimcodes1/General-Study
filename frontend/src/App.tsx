@@ -11,6 +11,9 @@ import CatalogueQuiz from './pages/CatalogueQuiz';
 import LearningSession from './pages/LearningSession';
 import Assessment from './pages/Assessment';
 import AdminPanel from './pages/AdminPanel';
+import AdminResources from './pages/AdminResources';
+import AdminReports from './pages/AdminReports';
+import AdminUsers from './pages/AdminUsers';
 import ProtectedRoute from './components/ProtectedRoute';
 import Preloader from './components/Preloader';
 import { useState, useEffect } from 'react';
@@ -44,7 +47,10 @@ function App() {
         <Route path="/catalogue/:resourceId/quiz" element={<ProtectedRoute><CatalogueQuiz /></ProtectedRoute>} />
         <Route path="/learn/:catalogueId/:topicId" element={<ProtectedRoute><LearningSession /></ProtectedRoute>} />
         <Route path="/assessment/:catalogueId/:mode" element={<ProtectedRoute><Assessment /></ProtectedRoute>} />
-        <Route path="/admin" element={<ProtectedRoute><AdminPanel /></ProtectedRoute>} />
+        <Route path="/admin" element={<ProtectedRoute adminOnly><AdminPanel /></ProtectedRoute>} />
+        <Route path="/admin/resources" element={<ProtectedRoute adminOnly><AdminResources /></ProtectedRoute>} />
+        <Route path="/admin/reports" element={<ProtectedRoute adminOnly><AdminReports /></ProtectedRoute>} />
+        <Route path="/admin/users" element={<ProtectedRoute adminOnly><AdminUsers /></ProtectedRoute>} />
         <Route path="/" element={<Navigate to="/dashboard" replace />} />
       </Routes>
     </BrowserRouter>

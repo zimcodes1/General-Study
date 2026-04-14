@@ -3,14 +3,13 @@ import { useNavigate, useParams } from 'react-router-dom';
 import LearningHeader from '../components/learning/LearningHeader';
 import ContentArea from '../components/learning/ContentArea';
 import NavigationControls from '../components/learning/NavigationControls';
-import QuizSection from '../components/learning/QuizSection';
 import CompletionScreen from '../components/learning/CompletionScreen';
 import { AlertCircle, Loader2 } from 'lucide-react';
 import { catalogueAPI } from '../utils/learning/catalogueAPI';
-import { getTopicIndex, getNextTopic, hasQuiz } from '../utils/learning/progressUtils';
+import { getTopicIndex, getNextTopic } from '../utils/learning/progressUtils';
 import type { CatalogueDetail, Topic } from '../utils/learning/types';
 
-type ViewMode = 'content' | 'quiz' | 'completion';
+type ViewMode = 'content' | 'completion';
 
 interface LoadingState {
   active: boolean;
@@ -31,8 +30,6 @@ export default function LearningSession() {
     active: true,
     error: null,
   });
-  const [quizSubmitting, setQuizSubmitting] = useState(false);
-  const [quizScore, setQuizScore] = useState<{ correct: number; total: number } | null>(null);
   const [ratingValue, setRatingValue] = useState<number | null>(null);
   const [ratingSubmitted, setRatingSubmitted] = useState(false);
   const [ratingSubmitting, setRatingSubmitting] = useState(false);
@@ -41,7 +38,6 @@ export default function LearningSession() {
   // When navigating between topics, always start on content view.
   useEffect(() => {
     setViewMode('content');
-    setQuizScore(null);
   }, [topicId]);
 
   useEffect(() => {
@@ -81,7 +77,6 @@ export default function LearningSession() {
   const totalTopics = catalogue?.topics.length || 0;
   const nextTopic = catalogue ? getNextTopic(catalogue.topics, currentTopicIndex) : null;
   const isLastTopic = currentTopicIndex === totalTopics - 1;
-  const topicHasQuiz = currentTopic ? hasQuiz(currentTopic) : false;
 
   const handleExit = () => {
     navigate(`/catalogue/${catalogueId}`);
@@ -90,30 +85,29 @@ export default function LearningSession() {
   const handleNext = async () => {
     if (!currentTopic || !catalogueId) return;
 
-    if (topicHasQuiz && viewMode === 'content') {
-      setViewMode('quiz');
-      return;
-    }
-
-    if (!topicHasQuiz) {
-      const alreadyCompleted = progress?.completed_topics?.includes(currentTopic.id);
-      if (!alreadyCompleted) {
-        try {
-          const result = await catalogueAPI.completeTopic(catalogueId, currentTopic.id);
-          setProgress(result.progress);
-        } catch (err) {
-          console.error('Failed to complete topic:', err);
-          setLoadingState({
-            active: false,
-            error: err instanceof Error ? err.message : 'Failed to complete topic',
-          });
-          return;
-        }
+    // Mark topic as completed
+    const alreadyCompleted = progress?.completed_topics?.includes(currentTopic.id);
+    if (!alreadyCompleted) {
+      try {
+        const result = await catalogueAPI.completeTopic(catalogueId, currentTopic.id);
+        setProgress(result.progress);
+      } catch (err) {
+        console.error('Failed to complete topic:', err);
+        setLoadingState({
+          active: false,
+          error: err instanceof Error ? err.message : 'Failed to complete topic',
+        });
+        return;
       }
     }
 
+    // If last topic, navigate to quiz instead of completion
     if (isLastTopic) {
-      setViewMode('completion');
+      if (catalogue?.resource_id) {
+        navigate(`/catalogue/${catalogue.resource_id}/quiz`);
+      } else {
+        setViewMode('completion');
+      }
     } else if (nextTopic) {
       navigate(`/learn/${catalogueId}/${nextTopic.id}`);
     }
@@ -124,37 +118,6 @@ export default function LearningSession() {
     const prevTopic = catalogue?.topics[currentTopicIndex - 1];
     if (prevTopic) {
       navigate(`/learn/${catalogueId}/${prevTopic.id}`);
-    }
-  };
-
-  const handleQuizComplete = async (answers: Record<string, string>, score: { correct: number; total: number }) => {
-    if (!currentTopic || !catalogueId) return;
-
-    setQuizSubmitting(true);
-    try {
-      const result = await catalogueAPI.submitQuiz(catalogueId, currentTopic.id, answers);
-      
-      // Update progress
-      setProgress(result.progress);
-      setQuizScore(score);
-
-      // Move to next topic or completion
-      if (isLastTopic) {
-        setViewMode('completion');
-      } else if (nextTopic) {
-        // Small delay before navigating
-        setTimeout(() => {
-          navigate(`/learn/${catalogueId}/${nextTopic.id}`);
-        }, 1500);
-      }
-    } catch (err) {
-      console.error('Failed to submit quiz:', err);
-      setLoadingState({
-        active: false,
-        error: err instanceof Error ? err.message : 'Failed to submit quiz',
-      });
-    } finally {
-      setQuizSubmitting(false);
     }
   };
 
@@ -260,7 +223,7 @@ export default function LearningSession() {
           pointsEarned={pointsEarned}
           nextTopicTitle={nextTopicTitle}
           onContinue={handleContinueAfterCompletion}
-          quizAvailable={nextTopic ? hasQuiz(nextTopic) : false}
+          quizAvailable={false}
           ratingValue={ratingValue}
           ratingSubmitted={ratingSubmitted}
           ratingSubmitting={ratingSubmitting}
@@ -288,25 +251,15 @@ export default function LearningSession() {
       />
 
       <div className="flex-1 overflow-y-auto pb-24">
-        {viewMode === 'content' ? (
-          <ContentArea content={currentTopic.content} />
-        ) : (
-          <QuizSection
-            questions={currentTopic.quiz_questions}
-            onComplete={handleQuizComplete}
-            isSubmitting={quizSubmitting}
-          />
-        )}
+        <ContentArea content={currentTopic.content} />
       </div>
 
-      {viewMode === 'content' && (
-        <NavigationControls
-          onPrevious={hasPrevious ? handlePrevious : undefined}
-          onNext={handleNext}
-          hasPrevious={hasPrevious}
-          nextLabel={topicHasQuiz ? 'Take Quiz' : isLastTopic ? 'Complete Course' : 'Next Topic'}
-        />
-      )}
+      <NavigationControls
+        onPrevious={hasPrevious ? handlePrevious : undefined}
+        onNext={handleNext}
+        hasPrevious={hasPrevious}
+        nextLabel={isLastTopic ? 'Take Quiz' : 'Next'}
+      />
     </div>
   );
 }

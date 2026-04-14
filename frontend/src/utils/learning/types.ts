@@ -20,6 +20,7 @@ export interface Topic {
 
 export interface CatalogueDetail {
   id: string;
+  resource_id: string;
   title: string;
   summary: string;
   topics: Topic[];

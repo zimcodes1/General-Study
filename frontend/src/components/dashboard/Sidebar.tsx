@@ -24,6 +24,10 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
     { icon: Settings, label: 'Settings', path: '/settings' },
   ];
 
+  const user = auth.getUser();
+  const visibleNavItems = navItems.filter(item => !item.adminOnly || user?.is_staff);
+
+
   return (
     <>
       {isOpen && (
@@ -34,9 +38,8 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
       )}
 
       <aside
-        className={`fixed lg:sticky top-0 left-0 h-screen bg-surface-container-low border-r border-outline-variant/15 z-50 transition-transform duration-300 ${
-          isOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'
-        } w-64 flex flex-col`}
+        className={`fixed lg:sticky top-0 left-0 h-screen bg-surface-container-low border-r border-outline-variant/15 z-50 transition-transform duration-300 ${isOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'
+          } w-64 flex flex-col`}
       >
         <div className="p-6 flex items-center justify-between">
           <div className="flex items-center gap-3">
@@ -51,7 +54,7 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
         </div>
 
         <nav className="flex-1 px-3 py-4 space-y-1">
-          {navItems.map((item) => {
+          {visibleNavItems.map((item) => {
             const Icon = item.icon;
             const isActive = location.pathname === item.path;
             return (
@@ -59,18 +62,17 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
                 key={item.path}
                 to={item.path}
                 onClick={onClose}
-                className={`flex items-center gap-3 px-4 py-3 rounded-xl transition-all ${
-                  isActive
+                className={`flex items-center gap-3 px-4 py-3 rounded-xl transition-all ${isActive
                     ? 'bg-surface-container-high text-on-surface border-r-4 border-primary'
                     : 'text-on-surface-variant hover:bg-surface-container hover:text-on-surface'
-                }`}
+                  }`}
               >
                 <Icon className="w-5 h-5" />
                 <span className="font-jakarta text-sm">{item.label}</span>
               </Link>
             );
           })}
-          
+
           <button
             onClick={handleLogout}
             className="lg:hidden w-full flex items-center gap-3 px-4 py-3 rounded-xl text-on-surface-variant hover:bg-surface-container hover:text-on-surface transition-all"

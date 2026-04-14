@@ -107,3 +107,25 @@ class Bookmark(models.Model):
     
     def __str__(self):
         return f"{self.user.full_name} bookmarked {self.resource.title}"
+
+
+class Report(models.Model):
+    STATUS_CHOICES = [
+        ('open', 'Open'),
+        ('dismissed', 'Dismissed'),
+        ('resolved', 'Resolved'),
+    ]
+
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    resource = models.ForeignKey(Resource, on_delete=models.CASCADE, related_name='reports')
+    reported_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True, related_name='reports_submitted')
+    reason = models.TextField()
+    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='open')
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ['-created_at']
+
+    def __str__(self):
+        return f"Report on '{self.resource.title}' - {self.status}"

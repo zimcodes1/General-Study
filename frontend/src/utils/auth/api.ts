@@ -16,6 +16,7 @@ export interface User {
   id: string;
   full_name: string;
   email: string;
+  is_staff?: boolean;
 }
 
 export interface Resource {
@@ -160,7 +161,7 @@ export const authAPI = {
   },
 
   getDepartments: async (facultyId?: string): Promise<Department[]> => {
-    const url = facultyId 
+    const url = facultyId
       ? `${API_BASE_URL}/users/departments/?faculty_id=${facultyId}`
       : `${API_BASE_URL}/users/departments/`;
     const response = await fetch(url);
@@ -373,4 +374,148 @@ export const progressAPI = {
 
     return response.json();
   },
+};
+
+// ─────────────────────────────────────────────────────
+// Admin API
+// ─────────────────────────────────────────────────────
+
+export interface AdminStats {
+  total_resources: number;
+  pending_approvals: number;
+  approved_today: number;
+  total_users: number;
+  active_users: number;
+  open_reports: number;
+}
+
+export interface AdminResource {
+  id: string;
+  title: string;
+  course_code: string;
+  course_name: string;
+  faculty_name: string;
+  department_name: string | null;
+  level: string;
+  file_type: string;
+  status: string;
+  rating_avg: number;
+  rating_count: number;
+  uploaded_by: User;
+  created_at: string;
+}
+
+export interface AdminResourceListResponse {
+  count: number; limit: number; offset: number; results: AdminResource[];
+}
+
+export interface AdminReport {
+  id: string;
+  resource_id: string;
+  resource_title: string;
+  course_code: string;
+  reason: string;
+  reported_by: string;
+  date_reported: string;
+  status: 'open' | 'dismissed' | 'resolved';
+}
+
+export interface AdminReportListResponse {
+  count: number; limit: number; offset: number; results: AdminReport[];
+}
+
+export interface AdminUser {
+  id: string;
+  full_name: string;
+  email: string;
+  department: string;
+  faculty: string;
+  degree_level: string;
+  current_level: string;
+  status: 'active' | 'disabled';
+  joined: string;
+  last_active: string | null;
+}
+
+export interface AdminUserListResponse {
+  count: number; limit: number; offset: number; results: AdminUser[];
+}
+
+export interface WeeklyDataPoint { week: string; count: number; }
+
+export interface AdminResourceAnalytics {
+  status_breakdown: { pending: number; approved: number; rejected: number; processing: number; };
+  weekly_uploads: WeeklyDataPoint[];
+}
+
+export interface AdminUserAnalytics {
+  total_users: number;
+  active_users: number;
+  new_this_week: number;
+  weekly_signups: WeeklyDataPoint[];
+  degree_breakdown: Record<string, number>;
+}
+
+const adminToken = () => {
+  const token = localStorage.getItem('access_token');
+  if (!token) throw new Error('Unauthorized');
+  return token;
+};
+
+const adminFetch = async (path: string, options: RequestInit = {}) => {
+  const res = await fetch(`${API_BASE_URL}${path}`, {
+    ...options,
+    headers: {
+      'Content-Type': 'application/json',
+      Authorization: `Bearer ${adminToken()}`,
+      ...((options.headers as Record<string, string>) || {}),
+    },
+  });
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}));
+    throw new Error((err as any).detail || 'Admin API error');
+  }
+  return res.status === 204 ? null : res.json();
+};
+
+export const adminAPI = {
+  getStats: (): Promise<AdminStats> => adminFetch('/admin/stats/'),
+
+  getResources: (params?: { status?: string; search?: string; limit?: number; offset?: number }): Promise<AdminResourceListResponse> => {
+    const q = new URLSearchParams();
+    if (params?.status && params.status !== 'all') q.set('status', params.status);
+    if (params?.search) q.set('search', params.search);
+    q.set('limit', String(params?.limit ?? 20));
+    q.set('offset', String(params?.offset ?? 0));
+    return adminFetch(`/admin/resources/?${q}`);
+  },
+
+  approveResource: (id: string) => adminFetch(`/admin/resources/${id}/approve/`, { method: 'POST' }),
+  rejectResource: (id: string, reason?: string) => adminFetch(`/admin/resources/${id}/reject/`, { method: 'POST', body: JSON.stringify({ reason: reason ?? 'Rejected by admin' }) }),
+  deleteResource: (id: string) => adminFetch(`/admin/resources/${id}/delete/`, { method: 'DELETE' }),
+  getResourceAnalytics: (): Promise<AdminResourceAnalytics> => adminFetch('/admin/resource-analytics/'),
+
+  getReports: (params?: { status?: string; limit?: number; offset?: number }): Promise<AdminReportListResponse> => {
+    const q = new URLSearchParams();
+    if (params?.status && params.status !== 'all') q.set('status', params.status);
+    q.set('limit', String(params?.limit ?? 20));
+    q.set('offset', String(params?.offset ?? 0));
+    return adminFetch(`/admin/reports/?${q}`);
+  },
+
+  dismissReport: (id: string) => adminFetch(`/admin/reports/${id}/dismiss/`, { method: 'POST' }),
+  removeReportedResource: (id: string) => adminFetch(`/admin/reports/${id}/remove-resource/`, { method: 'POST' }),
+
+  getUsers: (params?: { search?: string; status?: string; limit?: number; offset?: number }): Promise<AdminUserListResponse> => {
+    const q = new URLSearchParams();
+    if (params?.search) q.set('search', params.search);
+    if (params?.status && params.status !== 'all') q.set('status', params.status);
+    q.set('limit', String(params?.limit ?? 20));
+    q.set('offset', String(params?.offset ?? 0));
+    return adminFetch(`/users/admin/users/?${q}`);
+  },
+
+  disableUser: (id: string) => adminFetch(`/users/admin/users/${id}/disable/`, { method: 'POST' }),
+  enableUser: (id: string) => adminFetch(`/users/admin/users/${id}/enable/`, { method: 'POST' }),
+  getUserAnalytics: (): Promise<AdminUserAnalytics> => adminFetch('/users/admin/user-analytics/'),
 };

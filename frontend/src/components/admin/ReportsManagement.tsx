@@ -1,4 +1,5 @@
-import { AlertTriangle, X, Trash2 } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
+import { AlertTriangle, X, Trash2, ArrowRight } from 'lucide-react';
 
 interface Report {
   id: string;
@@ -13,26 +14,47 @@ interface ReportsManagementProps {
   reports: Report[];
   onDismiss: (id: string) => void;
   onRemoveResource: (id: string) => void;
+  limit?: number;
+  showViewAll?: boolean;
 }
 
-export default function ReportsManagement({ reports, onDismiss, onRemoveResource }: ReportsManagementProps) {
+export default function ReportsManagement({
+  reports,
+  onDismiss,
+  onRemoveResource,
+  limit,
+  showViewAll = false,
+}: ReportsManagementProps) {
+  const navigate = useNavigate();
+  const displayed = limit !== undefined ? reports.slice(0, limit) : reports;
+
   return (
     <div className="bg-surface-container-low rounded-2xl border border-outline-variant/10 overflow-hidden">
-      <div className="p-6 border-b border-outline-variant/10">
+      <div className="p-6 border-b border-outline-variant/10 flex items-center justify-between">
         <div className="flex items-center gap-2">
           <AlertTriangle className="w-5 h-5 text-primary" />
-          <h2 className="text-xl font-bold text-on-surface">Reports & Flags</h2>
+          <div>
+            <h2 className="text-xl font-bold text-on-surface">Reports &amp; Flags</h2>
+            <p className="text-sm text-on-surface-variant mt-0.5">Review reported resources</p>
+          </div>
         </div>
-        <p className="text-sm text-on-surface-variant mt-1">Review reported resources</p>
+        {showViewAll && (
+          <button
+            onClick={() => navigate('/admin/reports')}
+            className="flex items-center gap-1.5 text-sm text-primary font-jakarta hover:opacity-80 transition-opacity"
+          >
+            View all <ArrowRight className="w-4 h-4" />
+          </button>
+        )}
       </div>
 
       <div className="divide-y divide-outline-variant/10">
-        {reports.length === 0 ? (
+        {displayed.length === 0 ? (
           <div className="p-12 text-center">
             <p className="text-on-surface-variant">No reports at this time</p>
           </div>
         ) : (
-          reports.map((report) => (
+          displayed.map((report) => (
             <div key={report.id} className="p-6 hover:bg-surface-container/50 transition-colors">
               <div className="flex items-start justify-between gap-4">
                 <div className="flex-1">

@@ -198,3 +198,151 @@ def recommended_resources(request):
         'offset': offset,
         'results': serializer.data
     }, status=status.HTTP_200_OK)
+
+
+# ──────────────────────────────────────────────
+# Admin User Management
+# ──────────────────────────────────────────────
+
+def _require_staff(request):
+    if not request.user.is_staff:
+        return Response({'detail': 'Admin access required.'}, status=status.HTTP_403_FORBIDDEN)
+    return None
+
+
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+def admin_user_list(request):
+    """
+    Paginated list of all users with optional search and status filter.
+    Query params: search, status (all|active|disabled), limit, offset
+    """
+    err = _require_staff(request)
+    if err:
+        return err
+
+    search = request.query_params.get('search', '').strip()
+    filter_status = request.query_params.get('status', 'all')
+    limit = int(request.query_params.get('limit', 20))
+    offset = int(request.query_params.get('offset', 0))
+
+    queryset = User.objects.select_related('faculty', 'department').order_by('-created_at')
+
+    if filter_status == 'active':
+        queryset = queryset.filter(is_active=True)
+    elif filter_status == 'disabled':
+        queryset = queryset.filter(is_active=False)
+
+    if search:
+        queryset = queryset.filter(
+            Q(full_name__icontains=search) | Q(email__icontains=search)
+        )
+
+    total_count = queryset.count()
+    paginated = queryset[offset: offset + limit]
+
+    data = [
+        {
+            'id': str(u.id),
+            'full_name': u.full_name,
+            'email': u.email,
+            'department': u.department.name if u.department else '',
+            'faculty': u.faculty.name if u.faculty else '',
+            'degree_level': u.degree_level,
+            'current_level': u.current_level,
+            'status': 'active' if u.is_active else 'disabled',
+            'joined': u.created_at.strftime('%-d %b, %Y'),
+            'last_active': u.last_active_date.strftime('%-d %b, %Y') if u.last_active_date else None,
+        }
+        for u in paginated
+    ]
+
+    return Response(
+        {'count': total_count, 'limit': limit, 'offset': offset, 'results': data},
+        status=status.HTTP_200_OK,
+    )
+
+
+@api_view(['POST'])
+@permission_classes([IsAuthenticated])
+def admin_disable_user(request, user_id):
+    """Disable (deactivate) a user account."""
+    err = _require_staff(request)
+    if err:
+        return err
+
+    try:
+        user = User.objects.get(id=user_id)
+    except User.DoesNotExist:
+        return Response({'detail': 'User not found.'}, status=status.HTTP_404_NOT_FOUND)
+
+    user.is_active = False
+    user.save(update_fields=['is_active'])
+    return Response({'detail': f'User {user.full_name} disabled.'}, status=status.HTTP_200_OK)
+
+
+@api_view(['POST'])
+@permission_classes([IsAuthenticated])
+def admin_enable_user(request, user_id):
+    """Re-enable a user account."""
+    err = _require_staff(request)
+    if err:
+        return err
+
+    try:
+        user = User.objects.get(id=user_id)
+    except User.DoesNotExist:
+        return Response({'detail': 'User not found.'}, status=status.HTTP_404_NOT_FOUND)
+
+    user.is_active = True
+    user.save(update_fields=['is_active'])
+    return Response({'detail': f'User {user.full_name} enabled.'}, status=status.HTTP_200_OK)
+
+
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+def admin_user_analytics(request):
+    """
+    Return user analytics:
+    - Total, active (last 30 days), new this week
+    - Weekly signups for the last 8 weeks
+    - Breakdown by degree level
+    """
+    err = _require_staff(request)
+    if err:
+        return err
+
+    now = timezone.now()
+    thirty_days_ago = now - timedelta(days=30)
+    week_start = now - timedelta(days=7)
+
+    total_users = User.objects.count()
+    active_users = User.objects.filter(last_active_date__gte=thirty_days_ago.date()).count()
+    new_this_week = User.objects.filter(created_at__gte=week_start).count()
+
+    # Weekly signups — last 8 weeks
+    weekly_signups = []
+    for i in range(7, -1, -1):
+        ws = now - timedelta(weeks=i + 1)
+        we = now - timedelta(weeks=i)
+        count = User.objects.filter(created_at__gte=ws, created_at__lt=we).count()
+        weekly_signups.append({'week': ws.strftime('%-d %b'), 'count': count})
+
+    # Degree level breakdown
+    degree_counts = (
+        User.objects.values('degree_level')
+        .annotate(count=Count('id'))
+        .order_by('degree_level')
+    )
+    degree_breakdown = {item['degree_level']: item['count'] for item in degree_counts}
+
+    return Response(
+        {
+            'total_users': total_users,
+            'active_users': active_users,
+            'new_this_week': new_this_week,
+            'weekly_signups': weekly_signups,
+            'degree_breakdown': degree_breakdown,
+        },
+        status=status.HTTP_200_OK,
+    )
