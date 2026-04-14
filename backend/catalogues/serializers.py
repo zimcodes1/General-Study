@@ -23,10 +23,11 @@ class TopicSerializer(serializers.ModelSerializer):
 class CatalogueDetailSerializer(serializers.ModelSerializer):
     """Serializer for catalogue with all topics"""
     topics = TopicSerializer(many=True, read_only=True)
+    resource_id = serializers.CharField(source='resource.id', read_only=True)
     
     class Meta:
         model = Catalogue
-        fields = ['id', 'title', 'summary', 'topics', 'created_at', 'updated_at']
+        fields = ['id', 'resource_id', 'title', 'summary', 'topics', 'created_at', 'updated_at']
         read_only_fields = fields
 
 

@@ -34,6 +34,7 @@ export default function CatalogueQuiz() {
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
   const [answers, setAnswers] = useState<{ [key: number]: number }>({});
   const [showResults, setShowResults] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
 
   const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:8000/api';
 
@@ -122,8 +123,50 @@ export default function CatalogueQuiz() {
     }
   };
 
-  const handleSubmit = () => {
-    setShowResults(true);
+  const handleSubmit = async () => {
+    if (!catalogue) return;
+
+    setSubmitting(true);
+    try {
+      // Convert answers from question index to question ID with answer text
+      const formattedAnswers: Record<string, string> = {};
+      Object.entries(answers).forEach(([questionIndex, answerIndex]) => {
+        const question = questions[parseInt(questionIndex)];
+        if (question) {
+          formattedAnswers[question.id] = question.options[answerIndex];
+        }
+      });
+
+      // Submit all quiz answers to backend
+      // Since quizzes are now per-catalogue (not per-topic), we'll submit to the first topic with questions
+      // or create a new endpoint for catalogue-level quizzes
+      const topicsWithQuiz = catalogue.topics.filter(t => t.quiz_questions && t.quiz_questions.length > 0);
+      
+      if (topicsWithQuiz.length > 0) {
+        // Submit quiz for each topic that has questions
+        for (const topic of topicsWithQuiz) {
+          const topicQuestions = topic.quiz_questions || [];
+          const topicAnswers: Record<string, string> = {};
+          
+          topicQuestions.forEach(q => {
+            if (formattedAnswers[q.id]) {
+              topicAnswers[q.id] = formattedAnswers[q.id];
+            }
+          });
+          
+          if (Object.keys(topicAnswers).length > 0) {
+            await catalogueAPI.submitQuiz(catalogue.id, topic.id, topicAnswers);
+          }
+        }
+      }
+
+      setShowResults(true);
+    } catch (err) {
+      console.error('Failed to submit quiz:', err);
+      alert('Failed to submit quiz. Please try again.');
+    } finally {
+      setSubmitting(false);
+    }
   };
 
   const handleRetake = () => {
@@ -244,7 +287,7 @@ export default function CatalogueQuiz() {
         answeredQuestions={Object.keys(answers).map(Number)}
         onPrevious={currentQuestionIndex > 0 ? handlePrevious : undefined}
         onNext={currentQuestionIndex < totalQuestions - 1 && isCurrentAnswered ? handleNext : undefined}
-        onSubmit={canSubmit ? handleSubmit : undefined}
+        onSubmit={canSubmit && !submitting ? handleSubmit : undefined}
         isExamMode={false}
       />
     </div>
