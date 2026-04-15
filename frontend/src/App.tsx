@@ -14,6 +14,7 @@ import AdminPanel from './pages/AdminPanel';
 import AdminResources from './pages/AdminResources';
 import AdminReports from './pages/AdminReports';
 import AdminUsers from './pages/AdminUsers';
+import NotFound from './pages/NotFound';
 import ProtectedRoute from './components/ProtectedRoute';
 import Preloader from './components/Preloader';
 import { useState, useEffect } from 'react';
@@ -52,6 +53,7 @@ function App() {
         <Route path="/admin/reports" element={<ProtectedRoute adminOnly><AdminReports /></ProtectedRoute>} />
         <Route path="/admin/users" element={<ProtectedRoute adminOnly><AdminUsers /></ProtectedRoute>} />
         <Route path="/" element={<Navigate to="/dashboard" replace />} />
+        <Route path="*" element={<NotFound />} />
       </Routes>
     </BrowserRouter>
   );
