@@ -1,5 +1,5 @@
 import { Link, useNavigate } from "react-router-dom";
-import { Mail, Lock, Zap } from "lucide-react";
+import { Mail, Lock, Zap, Eye, EyeOff } from "lucide-react";
 import Google from "../components/svgs/Google";
 import { useEffect, useState, type FormEvent } from "react";
 import { auth } from "../utils/auth";
@@ -12,6 +12,7 @@ export default function Login() {
 	});
 	const [loading, setLoading] = useState(false);
 	const [error, setError] = useState("");
+	const [showPassword, setShowPassword] = useState(false);
 
 	const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
 		setFormData({ ...formData, [e.target.name]: e.target.value });
@@ -91,14 +92,21 @@ export default function Login() {
 							<div className="relative">
 								<Lock className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-on-surface-variant" />
 								<input
-									type="password"
+									type={showPassword ? "text" : "password"}
 									name="password"
 									value={formData.password}
 									onChange={handleChange}
 									placeholder="••••••••"
 									required
-									className="w-full bg-surface-container-low rounded-xl pl-12 pr-4 py-3.5 text-on-surface placeholder:text-on-surface-variant/50 focus:bg-surface-container-high focus:outline-none focus:ring-2 focus:ring-tertiary/30 transition-all"
+									className="w-full bg-surface-container-low rounded-xl pl-12 pr-12 py-3.5 text-on-surface placeholder:text-on-surface-variant/50 focus:bg-surface-container-high focus:outline-none focus:ring-2 focus:ring-tertiary/30 transition-all"
 								/>
+								<button
+									type="button"
+									onClick={() => setShowPassword(!showPassword)}
+									className="absolute right-4 top-1/2 -translate-y-1/2 text-on-surface-variant hover:text-on-surface transition-colors"
+								>
+									{showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
+								</button>
 							</div>
 						</div>
 
