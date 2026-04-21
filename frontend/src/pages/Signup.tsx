@@ -7,6 +7,8 @@ import {
 	Building2,
 	Lock,
 	Zap,
+	Eye,
+	EyeOff,
 } from "lucide-react";
 import { useState, useEffect, type FormEvent } from "react";
 import { auth, type RegisterData, authAPI, type Faculty, type Department } from "../utils/auth";
@@ -30,6 +32,8 @@ export default function Signup() {
 	const [faculties, setFaculties] = useState<Faculty[]>([]);
 	const [departments, setDepartments] = useState<Department[]>([]);
 	const [loadingDepartments, setLoadingDepartments] = useState(false);
+	const [showPassword, setShowPassword] = useState(false);
+	const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
 	const getPasswordStrength = (pass: string) => {
 		if (pass.length === 0) return { strength: 0, label: "" };
@@ -274,13 +278,20 @@ export default function Signup() {
 							<div className="relative">
 								<Lock className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-on-surface-variant" />
 								<input
-									type="password"
+									type={showPassword ? "text" : "password"}
 									placeholder="Password"
 									value={password}
 									onChange={(e) => setPassword(e.target.value)}
 									required
-									className="w-full bg-surface-container-low rounded-xl pl-12 pr-4 py-3.5 text-on-surface placeholder:text-on-surface-variant/50 focus:bg-surface-container-high focus:outline-none focus:ring-2 focus:ring-tertiary/30 transition-all"
+									className="w-full bg-surface-container-low rounded-xl pl-12 pr-12 py-3.5 text-on-surface placeholder:text-on-surface-variant/50 focus:bg-surface-container-high focus:outline-none focus:ring-2 focus:ring-tertiary/30 transition-all"
 								/>
+								<button
+									type="button"
+									onClick={() => setShowPassword(!showPassword)}
+									className="absolute right-4 top-1/2 -translate-y-1/2 text-on-surface-variant hover:text-on-surface transition-colors"
+								>
+									{showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
+								</button>
 							</div>
 							{password && (
 								<div className="mt-2 flex items-center gap-2">
@@ -307,13 +318,20 @@ export default function Signup() {
 							<div className="relative">
 								<Lock className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-on-surface-variant" />
 								<input
-									type="password"
+									type={showConfirmPassword ? "text" : "password"}
 									value={confirmPassword}
 									onChange={(e) => setConfirmPassword(e.target.value)}
 									placeholder="Confirm Password"
 									required
-									className="w-full bg-surface-container-low rounded-xl pl-12 pr-4 py-3.5 text-on-surface placeholder:text-on-surface-variant/50 focus:bg-surface-container-high focus:outline-none focus:ring-2 focus:ring-tertiary/30 transition-all"
+									className="w-full bg-surface-container-low rounded-xl pl-12 pr-12 py-3.5 text-on-surface placeholder:text-on-surface-variant/50 focus:bg-surface-container-high focus:outline-none focus:ring-2 focus:ring-tertiary/30 transition-all"
 								/>
+								<button
+									type="button"
+									onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+									className="absolute right-4 top-1/2 -translate-y-1/2 text-on-surface-variant hover:text-on-surface transition-colors"
+								>
+									{showConfirmPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
+								</button>
 							</div>
 						</div>
 
