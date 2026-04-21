@@ -1,6 +1,5 @@
 import {
 	Search,
-	Bell,
 	Menu,
 	User,
 	LogOut,
