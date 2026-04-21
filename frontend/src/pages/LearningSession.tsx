@@ -79,7 +79,11 @@ export default function LearningSession() {
   const isLastTopic = currentTopicIndex === totalTopics - 1;
 
   const handleExit = () => {
-    navigate(`/catalogue/${catalogueId}`);
+    if (catalogue?.resource_id) {
+      navigate(`/catalogue/${catalogue.resource_id}`);
+    } else {
+      navigate('/catalogues');
+    }
   };
 
   const handleNext = async () => {
