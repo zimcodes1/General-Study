@@ -8,6 +8,15 @@ djangorestframework = "*"
 psycopg2-binary = "*"
 django-cors-headers = "*"
 djangorestframework-simplejwt = "*"
+pymupdf = "*"
+pdfplumber = "*"
+python-docx = "*"
+python-pptx = "*"
+pytesseract = "*"
+celery = {extras = ["redis"], version = "*"}
+python-dotenv = "*"
+groq = "*"
+requests = "*"
 
 [dev-packages]
 
