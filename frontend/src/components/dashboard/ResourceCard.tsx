@@ -90,14 +90,8 @@ export default function ResourceCard({
 	const detailHref = id ? `/catalogue/${id}` : undefined;
 	const showProgressView = progress !== undefined;
 
-	const CardWrapper = showProgressView && detailHref ? Link : 'div';
-	const wrapperProps = showProgressView && detailHref ? { to: detailHref } : {};
-
-	return (
-		<CardWrapper
-			{...wrapperProps}
-			className="group bg-surface-container-low rounded-[20px] overflow-hidden hover:bg-surface-container transition-all duration-300 border border-outline-variant/10 hover:border-outline-variant/30 hover:shadow-[0_20px_60px_rgba(155,168,255,0.15)] hover:-translate-y-1 block"
-		>
+	const cardContent = (
+		<>
 			<div className="relative aspect-[4/3] bg-surface-container-high overflow-hidden">
 				{thumbnail ? (
 					<img
@@ -206,6 +200,18 @@ export default function ResourceCard({
 					</button>
 				)}
 			</div>
-		</CardWrapper>
+		</>
+	);
+
+	const cardClassName = "group bg-surface-container-low rounded-[20px] overflow-hidden hover:bg-surface-container transition-all duration-300 border border-outline-variant/10 hover:border-outline-variant/30 hover:shadow-[0_20px_60px_rgba(155,168,255,0.15)] hover:-translate-y-1 block";
+
+	return showProgressView && detailHref ? (
+		<Link to={detailHref} className={cardClassName}>
+			{cardContent}
+		</Link>
+	) : (
+		<div className={cardClassName}>
+			{cardContent}
+		</div>
 	);
 }

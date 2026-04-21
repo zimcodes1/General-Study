@@ -40,9 +40,7 @@ export default function QuizSection({ questions, onComplete, isSubmitting = fals
 
   const isLastQuestion = currentQuestionIndex === questions.length - 1;
   const isAnswered = answers[currentQuestion.id] !== undefined;
-  const isCorrect = isAnswered && 
-    answers[currentQuestion.id]?.trim().toLowerCase() === currentQuestion.correct_answer?.trim().toLowerCase();
-  
+
   // Safely get options array
   const options = Array.isArray(currentQuestion.options) ? currentQuestion.options.filter((o) => o) : [];
 

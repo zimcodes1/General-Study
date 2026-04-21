@@ -1,4 +1,4 @@
-import ResourceCard, { type ResourceFileType } from './ResourceCard';
+import ResourceCard from './ResourceCard';
 import type { Resource } from '../../pages/Profile';
 
 interface ResourceGridProps {
