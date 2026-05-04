@@ -133,7 +133,7 @@ export default function Login() {
 						</div>
 
 						<div className="flex justify-center items-center mt-6">
-							<button className="w-full bg-surface-container-high rounded-xl py-3 text-on-surface text-sm font-jakarta hover:bg-surface-container-highest transition-colors flex items-center justify-center gap-2">
+							<button onClick={()=>{alert('Feature coming soon...')}} className="w-full bg-surface-container-high rounded-xl py-3 text-on-surface text-sm font-jakarta hover:bg-surface-container-highest transition-colors flex items-center justify-center gap-2">
 								<Google />
 								Google
 							</button>
