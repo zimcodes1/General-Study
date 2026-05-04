@@ -5,7 +5,6 @@ import {
 	LogOut,
 	ChevronDown,
 	Flame,
-	FileText,
 	Loader2,
 } from "lucide-react";
 import { auth } from "../../utils/auth";
