@@ -13,33 +13,33 @@ import { Reveal, useMotionOK } from "./MotionPrimitives";
 const highlights = [
   {
     icon: Zap,
-    title: "Fast, responsive",
-    desc: "Optimized interactions so you stay in flow while studying.",
+    title: "Fast AI processing",
+    desc: "Groq API with LLaMA 3.1 70B provides ultra-fast inference for catalogue generation.",
   },
   {
     icon: BookOpenCheck,
     title: "Built for learning",
-    desc: "Catalogues, quizzes, and sessions designed around recall.",
+    desc: "Catalogues, topics, quizzes, and sessions designed around structured study and recall.",
   },
   {
     icon: LockKeyhole,
-    title: "Privacy-first",
-    desc: "Keep your content yours (placeholder copy — adjust to your policy).",
+    title: "Admin moderation",
+    desc: "Resources go through approval workflow before being visible to all users.",
   },
   {
     icon: LineChart,
     title: "Measurable progress",
-    desc: "Track streaks, improvement, and coverage across your catalogues.",
+    desc: "Track completion percentage, points earned, daily streaks, and quiz scores.",
   },
   {
     icon: BadgeCheck,
-    title: "Confidence loops",
-    desc: "Short feedback cycles make it easier to keep showing up daily.",
+    title: "Gamification loops",
+    desc: "Earn 5 points per correct answer, maintain daily login streaks, and climb leaderboards.",
   },
   {
     icon: Sparkles,
-    title: "Polished UI",
-    desc: "Glassmorphism + smooth motion for a premium modern feel.",
+    title: "Modern tech stack",
+    desc: "Django REST + React + TypeScript + Celery + Redis for robust async processing.",
   },
 ];
 
@@ -56,11 +56,11 @@ export default function LandingWhy() {
                 Why General Study
               </div>
               <h2 className="mt-2 text-3xl sm:text-4xl font-bold tracking-tight">
-                Designed to feel effortless — and deliver results
+                AI-powered learning that actually works
               </h2>
               <p className="mt-3 text-on-surface-variant max-w-2xl">
-                A modern experience with meaningful motion, clarity-first layouts,
-                and components that guide you toward mastery.
+                Automatic catalogue generation, structured quizzes, progress tracking,
+                and a community resource library for university students.
               </p>
             </div>
           </div>
@@ -75,21 +75,21 @@ export default function LandingWhy() {
                 </div>
                 <div>
                   <div className="text-lg font-semibold tracking-tight">
-                    Your study system, finally unified
+                    Your academic resources, AI-enhanced
                   </div>
                   <p className="mt-2 text-sm text-on-surface-variant">
-                    Bring content, practice, and progress into one calm dashboard.
-                    Replace these placeholders with real screenshots later.
+                    Upload PDFs, slides, and notes. AI reads them and generates structured
+                    learning catalogues with topics, summaries, and quizzes in minutes.
                   </p>
                 </div>
               </div>
 
               <div className="mt-6 grid gap-3 sm:grid-cols-2">
                 {[
-                  { k: "Catalogues", v: "Structured topics" },
-                  { k: "Quizzes", v: "Recall training" },
-                  { k: "Sessions", v: "Guided focus" },
-                  { k: "Progress", v: "Streaks + insights" },
+                  { k: "Catalogues", v: "AI-generated topics" },
+                  { k: "Quizzes", v: "Auto MCQs + grading" },
+                  { k: "Sessions", v: "Topic-by-topic study" },
+                  { k: "Progress", v: "Streaks + points" },
                 ].map((i) => (
                   <div
                     key={i.k}
@@ -111,14 +111,14 @@ export default function LandingWhy() {
             >
               <GlassCard className="h-full p-6 sm:p-7">
                 <div className="text-sm font-semibold tracking-tight">
-                  What you get out of the box
+                  What powers the platform
                 </div>
                 <div className="mt-5 space-y-3">
                   {[
-                    "Glassmorphism layouts + shadows",
-                    "Scroll reveals + micro-interactions",
-                    "Mobile-first sections and cards",
-                    "Placeholder visuals you can replace",
+                    "Django REST Framework backend",
+                    "React + TypeScript frontend",
+                    "Celery async task processing",
+                    "LLaMA 3.1 70B via Groq API",
                   ].map((t) => (
                     <div
                       key={t}

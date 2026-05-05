@@ -30,9 +30,9 @@ function HeroMockup() {
                 <Sparkles className="h-5 w-5" />
               </div>
               <div>
-                <div className="font-semibold tracking-tight">Study cockpit</div>
+                <div className="font-semibold tracking-tight">AI-Powered Learning</div>
                 <div className="text-xs text-on-surface-variant">
-                  Your plan, progress, and AI help — together
+                  Upload files, get structured catalogues instantly
                 </div>
               </div>
             </div>
@@ -43,10 +43,10 @@ function HeroMockup() {
 
           <div className="mt-5 grid grid-cols-2 gap-3">
             {[
-              { icon: Brain, label: "Explain", value: "Instant clarity" },
-              { icon: Wand2, label: "Generate", value: "Smart quizzes" },
-              { icon: ShieldCheck, label: "Track", value: "Daily momentum" },
-              { icon: Sparkles, label: "Focus", value: "Zero fluff" },
+              { icon: Brain, label: "AI Processing", value: "LLaMA 3.1 70B" },
+              { icon: Wand2, label: "Auto Quizzes", value: "From your files" },
+              { icon: ShieldCheck, label: "Track Progress", value: "Streaks & points" },
+              { icon: Sparkles, label: "Study Sessions", value: "Guided learning" },
             ].map((c) => (
               <div
                 key={c.label}
@@ -61,15 +61,15 @@ function HeroMockup() {
 
           <div className="mt-4 rounded-3xl border border-outline-variant/20 bg-surface-container-high/25 p-4">
             <div className="flex items-center justify-between">
-              <div className="text-sm font-semibold">Today’s session</div>
-              <div className="text-xs text-on-surface-variant">25 min</div>
+              <div className="text-sm font-semibold">Catalogue Progress</div>
+              <div className="text-xs text-on-surface-variant">5 pts/quiz</div>
             </div>
             <div className="mt-3 h-2 rounded-full bg-surface-variant/60 overflow-hidden">
               <div className="h-full w-3/5 rounded-full bg-gradient-to-r from-primary to-secondary" />
             </div>
             <div className="mt-3 flex items-center justify-between text-xs text-on-surface-variant">
-              <span>Spaced repetition</span>
-              <span>+12% recall</span>
+              <span>Topic-by-topic mastery</span>
+              <span>60% complete</span>
             </div>
           </div>
         </div>
@@ -115,7 +115,7 @@ export default function LandingHero() {
               className="inline-flex items-center gap-2 rounded-full sm:border border-outline-variant/50 bg-surface-container-low/40 backdrop-blur-[24px] px-4 py-4 text-xs text-on-surface-variant"
             >
               <Sparkles className="h-4 w-4 text-tertiary" />
-              Modern study system for serious learners
+              AI-powered academic resource sharing platform
             </motion.div>
 
             <motion.h1
@@ -136,8 +136,8 @@ export default function LandingHero() {
               transition={{ duration: 0.8, ease: [0.2, 0.9, 0.2, 1], delay: 0.12 }}
               className="mt-6 text-base sm:text-lg text-on-surface-variant max-w-xl"
             >
-              General Study turns your notes into structured catalogues, quizzes, and
-              guided sessions — with AI explanations that keep you in flow.
+              Upload PDFs, slides, and notes. Our AI automatically generates structured
+              learning catalogues with summaries, quizzes, and topic-by-topic study plans.
             </motion.p>
 
             <motion.div
@@ -167,9 +167,9 @@ export default function LandingHero() {
               className="mt-10 grid grid-cols-3 gap-4 max-w-xl"
             >
               {[
-                { stat: "2x", label: "Faster recall" },
-                { stat: "AI", label: "Explanations" },
-                { stat: "24/7", label: "Study coach" },
+                { stat: "Auto", label: "AI catalogues" },
+                { stat: "5pts", label: "Per correct answer" },
+                { stat: "Track", label: "Daily streaks" },
               ].map((s) => (
                 <div
                   key={s.label}

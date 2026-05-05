@@ -19,14 +19,14 @@ export default function LandingCTA() {
                 <div>
                   <div className="inline-flex items-center gap-2 rounded-full border border-outline-variant/20 bg-surface-container-low/30 backdrop-blur-[24px] px-4 py-2 text-xs text-on-surface-variant">
                     <Sparkles className="h-4 w-4 text-tertiary" />
-                    Ready when you are
+                    Free to start
                   </div>
                   <h3 className="mt-4 text-3xl sm:text-4xl font-bold tracking-tight">
-                    Start building your study momentum today
+                    Start learning smarter today
                   </h3>
                   <p className="mt-3 text-on-surface-variant max-w-xl">
-                    Sign up, create a catalogue, and get your first guided session
-                    running in minutes.
+                    Sign up, upload your first file, and get an AI-generated learning
+                    catalogue in minutes. No credit card required.
                   </p>
                 </div>
 

@@ -6,21 +6,21 @@ import { Reveal, useMotionOK } from "./MotionPrimitives";
 const steps = [
   {
     icon: LayoutDashboard,
-    title: "Create a catalogue",
-    desc: "Upload or add content, then organize it into topics and subtopics.",
-    bullets: ["Structured trees", "Searchable content", "Quick edits"],
+    title: "Upload your materials",
+    desc: "Upload PDFs, slides, or documents. AI extracts text and processes it with LLaMA 3.1 70B in the background.",
+    bullets: ["PDF support", "Auto text extraction", "Async processing"],
   },
   {
     icon: Sparkles,
-    title: "Study with guidance",
-    desc: "Run focused sessions with explanations, examples, and gentle pacing.",
-    bullets: ["Explain like I’m 5", "Topic summaries", "Contextual hints"],
+    title: "Get structured catalogues",
+    desc: "AI generates learning catalogues with topics, summaries, and quiz questions automatically from your content.",
+    bullets: ["Topic breakdown", "AI summaries", "Auto quizzes"],
   },
   {
     icon: Wand2,
-    title: "Test yourself fast",
-    desc: "Generate quizzes and assessments to lock in recall with feedback.",
-    bullets: ["Multiple modes", "Instant scoring", "Progress insights"],
+    title: "Study and earn points",
+    desc: "Complete topics, take quizzes, earn 5 points per correct answer, and track your progress with streaks.",
+    bullets: ["Quiz grading", "Points system", "Daily streaks"],
   },
 ];
 
@@ -81,11 +81,11 @@ export default function LandingExplainer() {
                 How it works
               </div>
               <h2 className="mt-2 text-3xl sm:text-4xl font-bold tracking-tight">
-                A simple loop that compounds over time
+                Three steps from upload to mastery
               </h2>
               <p className="mt-3 text-on-surface-variant max-w-xl">
-                Capture content, study with guidance, test for recall. Repeat — and
-                watch your confidence grow.
+                Upload your study materials, let AI process them into structured
+                catalogues, then study and track your progress.
               </p>
 
               <div className="mt-8 space-y-4">
