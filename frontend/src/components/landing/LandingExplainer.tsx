@@ -92,7 +92,7 @@ export default function LandingExplainer() {
                 {steps.map((s, idx) => (
                   <Reveal key={s.title} delay={0.05 + idx * 0.08}>
                     <GlassCard className="p-5">
-                      <div className="flex items-start gap-4">
+                      <div className="flex max-sm:flex-col items-start gap-4">
                         <div className="h-12 w-12 rounded-2xl bg-surface-container-high/40 border border-outline-variant/20 flex items-center justify-center">
                           <s.icon className="h-5 w-5 text-tertiary" />
                         </div>

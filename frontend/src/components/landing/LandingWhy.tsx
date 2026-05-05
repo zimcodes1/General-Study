@@ -69,7 +69,7 @@ export default function LandingWhy() {
         <div className="mt-10 grid gap-4 sm:gap-6 lg:grid-cols-12">
           <Reveal className="lg:col-span-7">
             <GlassCard className="p-6 sm:p-7">
-              <div className="flex items-start gap-4">
+              <div className="flex max-sm:flex-col items-start gap-4">
                 <div className="h-12 w-12 rounded-2xl bg-gradient-to-br from-primary to-secondary flex items-center justify-center text-on-primary-fixed">
                   <Sparkles className="h-5 w-5" />
                 </div>
