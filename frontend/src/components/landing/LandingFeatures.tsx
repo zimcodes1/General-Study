@@ -68,7 +68,7 @@ export default function LandingFeatures() {
               >
                 <GlassCard className="h-full p-6">
                   <div className="flex items-start gap-4">
-                    <div className="h-12 w-12 rounded-2xl bg-surface-container-high/40 border border-outline-variant/20 flex items-center justify-center">
+                    <div className="h-12 w-12 rounded-2xl sm:bg-surface-container-high/40 sm:border border-outline-variant/20 flex items-center justify-center">
                       <f.icon className="h-5 w-5 text-tertiary" />
                     </div>
                     <div>

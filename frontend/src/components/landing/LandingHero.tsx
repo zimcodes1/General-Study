@@ -36,7 +36,7 @@ function HeroMockup() {
                 </div>
               </div>
             </div>
-            <div className="rounded-full border border-outline-variant/20 bg-surface-container-high/30 px-3 py-1 text-xs text-on-surface-variant">
+            <div className="max-sm:hidden rounded-full border border-outline-variant/20 bg-surface-container-high/30 px-3 py-1 text-xs text-on-surface-variant">
               Live preview
             </div>
           </div>
@@ -105,14 +105,14 @@ export default function LandingHero() {
         <div className="absolute inset-0 bg-[radial-gradient(900px_500px_at_50%_0%,rgba(155,168,255,0.15),transparent_60%)]" />
       </div>
 
-      <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+      <div className="mx-auto max-w-7xl max-sm:pb-10 px-4 sm:px-6 lg:px-8">
         <div className="grid items-center gap-14 lg:grid-cols-2">
           <div>
             <motion.div
               initial={motionOK ? { opacity: 0, y: 14 } : { opacity: 1, y: 0 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.7, ease: [0.2, 0.9, 0.2, 1] }}
-              className="inline-flex items-center gap-2 rounded-full border border-outline-variant/20 bg-surface-container-low/40 backdrop-blur-[24px] px-4 py-2 text-xs text-on-surface-variant"
+              className="inline-flex items-center gap-2 rounded-full sm:border border-outline-variant/50 bg-surface-container-low/40 backdrop-blur-[24px] px-4 py-4 text-xs text-on-surface-variant"
             >
               <Sparkles className="h-4 w-4 text-tertiary" />
               Modern study system for serious learners
@@ -173,9 +173,9 @@ export default function LandingHero() {
               ].map((s) => (
                 <div
                   key={s.label}
-                  className="rounded-3xl border border-outline-variant/20 bg-surface-container-low/35 backdrop-blur-[24px] px-4 py-4"
+                  className="rounded-3xl border border-outline-variant/50 bg-surface-container-low/50 backdrop-blur-[24px] px-4 py-4"
                 >
-                  <div className="text-xl font-bold">{s.stat}</div>
+                  <div className="text-xl font-bold max-sm:text-center">{s.stat}</div>
                   <div className="mt-1 text-xs text-on-surface-variant">
                     {s.label}
                   </div>
