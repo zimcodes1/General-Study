@@ -9,6 +9,7 @@ import {
 	Zap,
 	Eye,
 	EyeOff,
+	ChevronDown,
 } from "lucide-react";
 import { useState, useEffect, type FormEvent } from "react";
 import { auth, type RegisterData, authAPI, type Faculty, type Department } from "../utils/auth";
@@ -73,10 +74,15 @@ export default function Signup() {
 	const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
 		const { name, value } = e.target;
 
-		if (name === 'faculty_id' && value) {
-			setFormData({ ...formData, faculty_id: value, department_id: '' });
-			setDepartments([]);
-			loadDepartments(value);
+		if (name === 'faculty_id') {
+			if (value) {
+				setFormData({ ...formData, faculty_id: value, department_id: '' });
+				setDepartments([]);
+				loadDepartments(value);
+			} else {
+				setFormData({ ...formData, faculty_id: '', department_id: '' });
+				setDepartments([]);
+			}
 		} else {
 			setFormData({ ...formData, [name]: value });
 		}
@@ -200,13 +206,13 @@ export default function Signup() {
 
 						<div className="grid grid-cols-1 md:grid-cols-2 gap-4">
 							<div className="relative">
-								<Building2 className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-on-surface-variant" />
+								<Building2 className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-on-surface-variant pointer-events-none" />
 								<select
 									name="faculty_id"
 									value={formData.faculty_id}
 									onChange={handleChange}
 									required
-									className="w-full bg-surface-container-low rounded-xl pl-12 pr-4 py-3.5 text-on-surface appearance-none focus:bg-surface-container-high focus:outline-none focus:ring-2 focus:ring-tertiary/30 transition-all"
+									className="w-full bg-surface-container-low rounded-xl pl-12 pr-10 py-3.5 text-on-surface appearance-none focus:bg-surface-container-high focus:outline-none focus:ring-2 focus:ring-tertiary/30 transition-all"
 								>
 									<option value="">Select Faculty</option>
 									{faculties.map((faculty) => (
@@ -215,16 +221,17 @@ export default function Signup() {
 										</option>
 									))}
 								</select>
+								<ChevronDown className="absolute right-4 top-1/2 -translate-y-1/2 w-5 h-5 text-on-surface-variant pointer-events-none" />
 							</div>
 							<div className="relative">
-								<Building2 className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-on-surface-variant" />
+								<Building2 className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-on-surface-variant pointer-events-none" />
 								<select
 									name="department_id"
 									value={formData.department_id}
 									onChange={handleChange}
 									required
 									disabled={!formData.faculty_id || loadingDepartments}
-									className="w-full bg-surface-container-low rounded-xl pl-12 pr-4 py-3.5 text-on-surface appearance-none focus:bg-surface-container-high focus:outline-none focus:ring-2 focus:ring-tertiary/30 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+									className="w-full bg-surface-container-low rounded-xl pl-12 pr-10 py-3.5 text-on-surface appearance-none focus:bg-surface-container-high focus:outline-none focus:ring-2 focus:ring-tertiary/30 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
 								>
 									<option value="">
 										{loadingDepartments ? 'Loading...' : 'Select Department'}
@@ -235,33 +242,35 @@ export default function Signup() {
 										</option>
 									))}
 								</select>
+								<ChevronDown className="absolute right-4 top-1/2 -translate-y-1/2 w-5 h-5 text-on-surface-variant pointer-events-none" />
 							</div>
 						</div>
 
 						<div className="grid grid-cols-1 md:grid-cols-2 gap-4">
 							<div className="relative">
-								<GraduationCap className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-on-surface-variant" />
+								<GraduationCap className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-on-surface-variant pointer-events-none" />
 								<select
 									name="degree_level"
 									value={formData.degree_level}
 									onChange={handleChange}
 									required
-									className="w-full bg-surface-container-low rounded-xl pl-12 pr-4 py-3.5 text-on-surface appearance-none focus:bg-surface-container-high focus:outline-none focus:ring-2 focus:ring-tertiary/30 transition-all"
+									className="w-full bg-surface-container-low rounded-xl pl-12 pr-10 py-3.5 text-on-surface appearance-none focus:bg-surface-container-high focus:outline-none focus:ring-2 focus:ring-tertiary/30 transition-all"
 								>
 									<option value="">Degree Level</option>
 									<option value="undergraduate">Undergraduate</option>
 									<option value="graduate">Graduate</option>
 									<option value="postgraduate">Postgraduate</option>
 								</select>
+								<ChevronDown className="absolute right-4 top-1/2 -translate-y-1/2 w-5 h-5 text-on-surface-variant pointer-events-none" />
 							</div>
 							<div className="relative">
-								<GraduationCap className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-on-surface-variant" />
+								<GraduationCap className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-on-surface-variant pointer-events-none" />
 								<select
 									name="current_level"
 									value={formData.current_level}
 									onChange={handleChange}
 									required
-									className="w-full bg-surface-container-low rounded-xl pl-12 pr-4 py-3.5 text-on-surface appearance-none focus:bg-surface-container-high focus:outline-none focus:ring-2 focus:ring-tertiary/30 transition-all"
+									className="w-full bg-surface-container-low rounded-xl pl-12 pr-10 py-3.5 text-on-surface appearance-none focus:bg-surface-container-high focus:outline-none focus:ring-2 focus:ring-tertiary/30 transition-all"
 								>
 									<option value="">Current Level</option>
 									<option value="100">100 Level</option>
@@ -271,6 +280,7 @@ export default function Signup() {
 									<option value="500">500 Level</option>
 									<option value="600">600 Level</option>
 								</select>
+								<ChevronDown className="absolute right-4 top-1/2 -translate-y-1/2 w-5 h-5 text-on-surface-variant pointer-events-none" />
 							</div>
 						</div>
 
