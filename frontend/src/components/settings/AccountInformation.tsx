@@ -1,4 +1,4 @@
-import { User, Mail, Phone, MapPin, Building2, GraduationCap } from 'lucide-react';
+import { User, Mail, Phone, MapPin, Building2, GraduationCap, ChevronDown } from 'lucide-react';
 import { useState, useEffect } from 'react';
 import { auth, authAPI, type Faculty, type Department } from '../../utils/auth';
 
@@ -67,11 +67,17 @@ export default function AccountInformation({ onChange }: AccountInformationProps
     
     const updatedData = { ...formData, [name]: value };
     
-    if (name === 'faculty_id' && value) {
-      updatedData.department_id = '';
-      setFormData(updatedData);
-      setDepartments([]);
-      loadDepartments(value);
+    if (name === 'faculty_id') {
+      if (value) {
+        updatedData.department_id = '';
+        setFormData(updatedData);
+        setDepartments([]);
+        loadDepartments(value);
+      } else {
+        updatedData.department_id = '';
+        setFormData(updatedData);
+        setDepartments([]);
+      }
     } else {
       setFormData(updatedData);
     }
@@ -162,12 +168,12 @@ export default function AccountInformation({ onChange }: AccountInformationProps
               Faculty
             </label>
             <div className="relative">
-              <Building2 className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-on-surface-variant" />
+              <Building2 className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-on-surface-variant pointer-events-none" />
               <select
                 name="faculty_id"
                 value={formData.faculty_id}
                 onChange={handleChange}
-                className="w-full bg-surface-container rounded-xl pl-12 pr-4 py-3 text-on-surface appearance-none focus:bg-surface-container-high focus:outline-none focus:ring-2 focus:ring-tertiary/30 transition-all border border-outline-variant/10"
+                className="w-full bg-surface-container rounded-xl pl-12 pr-10 py-3 text-on-surface appearance-none focus:bg-surface-container-high focus:outline-none focus:ring-2 focus:ring-tertiary/30 transition-all border border-outline-variant/10"
               >
                 <option value="">Select Faculty</option>
                 {faculties.map((faculty) => (
@@ -176,6 +182,7 @@ export default function AccountInformation({ onChange }: AccountInformationProps
                   </option>
                 ))}
               </select>
+              <ChevronDown className="absolute right-4 top-1/2 -translate-y-1/2 w-5 h-5 text-on-surface-variant pointer-events-none" />
             </div>
           </div>
 
@@ -184,13 +191,13 @@ export default function AccountInformation({ onChange }: AccountInformationProps
               Department
             </label>
             <div className="relative">
-              <Building2 className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-on-surface-variant" />
+              <Building2 className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-on-surface-variant pointer-events-none" />
               <select
                 name="department_id"
                 value={formData.department_id}
                 onChange={handleChange}
                 disabled={!formData.faculty_id || loadingDepartments}
-                className="w-full bg-surface-container rounded-xl pl-12 pr-4 py-3 text-on-surface appearance-none focus:bg-surface-container-high focus:outline-none focus:ring-2 focus:ring-tertiary/30 transition-all border border-outline-variant/10 disabled:opacity-50 disabled:cursor-not-allowed"
+                className="w-full bg-surface-container rounded-xl pl-12 pr-10 py-3 text-on-surface appearance-none focus:bg-surface-container-high focus:outline-none focus:ring-2 focus:ring-tertiary/30 transition-all border border-outline-variant/10 disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 <option value="">
                   {loadingDepartments ? 'Loading...' : 'Select Department'}
@@ -201,6 +208,7 @@ export default function AccountInformation({ onChange }: AccountInformationProps
                   </option>
                 ))}
               </select>
+              <ChevronDown className="absolute right-4 top-1/2 -translate-y-1/2 w-5 h-5 text-on-surface-variant pointer-events-none" />
             </div>
           </div>
         </div>
@@ -211,18 +219,19 @@ export default function AccountInformation({ onChange }: AccountInformationProps
               Degree Level
             </label>
             <div className="relative">
-              <GraduationCap className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-on-surface-variant" />
+              <GraduationCap className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-on-surface-variant pointer-events-none" />
               <select
                 name="degree_level"
                 value={formData.degree_level}
                 onChange={handleChange}
-                className="w-full bg-surface-container rounded-xl pl-12 pr-4 py-3 text-on-surface appearance-none focus:bg-surface-container-high focus:outline-none focus:ring-2 focus:ring-tertiary/30 transition-all border border-outline-variant/10"
+                className="w-full bg-surface-container rounded-xl pl-12 pr-10 py-3 text-on-surface appearance-none focus:bg-surface-container-high focus:outline-none focus:ring-2 focus:ring-tertiary/30 transition-all border border-outline-variant/10"
               >
                 <option value="">Select Degree Level</option>
                 <option value="undergraduate">Undergraduate</option>
                 <option value="graduate">Graduate</option>
                 <option value="postgraduate">Postgraduate</option>
               </select>
+              <ChevronDown className="absolute right-4 top-1/2 -translate-y-1/2 w-5 h-5 text-on-surface-variant pointer-events-none" />
             </div>
           </div>
 
@@ -231,12 +240,12 @@ export default function AccountInformation({ onChange }: AccountInformationProps
               Current Level
             </label>
             <div className="relative">
-              <GraduationCap className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-on-surface-variant" />
+              <GraduationCap className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-on-surface-variant pointer-events-none" />
               <select
                 name="current_level"
                 value={formData.current_level}
                 onChange={handleChange}
-                className="w-full bg-surface-container rounded-xl pl-12 pr-4 py-3 text-on-surface appearance-none focus:bg-surface-container-high focus:outline-none focus:ring-2 focus:ring-tertiary/30 transition-all border border-outline-variant/10"
+                className="w-full bg-surface-container rounded-xl pl-12 pr-10 py-3 text-on-surface appearance-none focus:bg-surface-container-high focus:outline-none focus:ring-2 focus:ring-tertiary/30 transition-all border border-outline-variant/10"
               >
                 <option value="">Select Current Level</option>
                 <option value="100">100 Level</option>
@@ -246,6 +255,7 @@ export default function AccountInformation({ onChange }: AccountInformationProps
                 <option value="500">500 Level</option>
                 <option value="600">600 Level</option>
               </select>
+              <ChevronDown className="absolute right-4 top-1/2 -translate-y-1/2 w-5 h-5 text-on-surface-variant pointer-events-none" />
             </div>
           </div>
         </div>
