@@ -7,3 +7,5 @@ backend/.env
 backend/activity/__pycache__/
 backend/users/__pycache__/
 backend/content.json
+backend/.python-version
+backend/uv.lock
