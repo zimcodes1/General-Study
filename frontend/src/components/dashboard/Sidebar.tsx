@@ -92,7 +92,7 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
               <p className="text-xs text-on-surface-variant">Get personalized help</p>
             </div>
           </div>
-          <button className="w-full bg-gradient-to-r from-primary to-secondary text-on-primary-fixed text-xs font-semibold py-2 rounded-lg hover:shadow-[0_0_20px_rgba(155,168,255,0.3)] transition-all font-jakarta">
+          <button onClick={()=>{alert("Feature coming soon!")}} className="w-full bg-gradient-to-r from-primary to-secondary text-on-primary-fixed text-xs font-semibold py-2 rounded-lg hover:shadow-[0_0_20px_rgba(155,168,255,0.3)] transition-all font-jakarta">
             Try Now
           </button>
         </div>
