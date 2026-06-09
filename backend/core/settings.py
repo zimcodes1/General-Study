@@ -214,7 +214,7 @@ if not GROQ_API_KEY:
     warnings.warn("GROQ_API_KEY not found in environment. AI processing will fail.")
 
 # Optional: override Groq model via env if desired
-GROQ_MODEL = os.getenv('GROQ_MODEL', 'whisper-large-v3-turbo')
+GROQ_MODEL = os.getenv('GROQ_MODEL', 'openai/gpt-oss-20b')
 
 # Admin Email
 ADMIN_EMAIL = os.getenv('ADMIN_EMAIL', 'admin@example.com')

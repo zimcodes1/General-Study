@@ -5,7 +5,7 @@ Handles summarization, topic extraction, and quiz generation.
 
 import json
 import logging
-from typing import Dict, List, Any, Optional
+from typing import Dict, List, Any
 from django.conf import settings
 
 try:
