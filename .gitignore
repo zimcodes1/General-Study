@@ -9,3 +9,17 @@ backend/users/__pycache__/
 backend/content.json
 backend/.python-version
 backend/uv.lock
+backend/activity/migrations/__pycache__/
+backend/assessments/__pycache__/
+backend/assessments/migrations/__pycache__/
+backend/catalogues/__pycache__/
+backend/catalogues/migrations/__pycache__/
+backend/core/__pycache__/
+backend/gamification/__pycache__/
+backend/gamification/migrations/__pycache__/
+backend/processing/__pycache__/
+backend/progress/__pycache__/
+backend/progress/migrations/__pycache__/
+backend/resources/__pycache__/
+backend/resources/migrations/__pycache__/
+backend/users/migrations/__pycache__/

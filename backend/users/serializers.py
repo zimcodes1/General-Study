@@ -17,8 +17,8 @@ class DepartmentSerializer(serializers.ModelSerializer):
 
 class UserRegistrationSerializer(serializers.ModelSerializer):
     password = serializers.CharField(write_only=True, min_length=8)
-    faculty_id = serializers.UUIDField(write_only=True)
-    department_id = serializers.UUIDField(write_only=True)
+    faculty_id = serializers.UUIDField(write_only=True, error_messages={'invalid': 'Please select a valid faculty.', 'required': 'Faculty is required.'})
+    department_id = serializers.UUIDField(write_only=True, error_messages={'invalid': 'Please select a valid department.', 'required': 'Department is required.'})
     
     class Meta:
         model = User
@@ -29,9 +29,16 @@ class UserRegistrationSerializer(serializers.ModelSerializer):
         faculty_id = validated_data.pop('faculty_id')
         department_id = validated_data.pop('department_id')
         
-        faculty = Faculty.objects.get(id=faculty_id)
-        department = Department.objects.get(id=department_id)
-        
+        try:
+            faculty = Faculty.objects.get(id=faculty_id)
+        except Faculty.DoesNotExist:
+            raise serializers.ValidationError({'faculty_id': 'Selected faculty does not exist.'})
+
+        try:
+            department = Department.objects.get(id=department_id)
+        except Department.DoesNotExist:
+            raise serializers.ValidationError({'department_id': 'Selected department does not exist.'})
+
         user = User.objects.create_user(
             **validated_data,
             faculty=faculty,

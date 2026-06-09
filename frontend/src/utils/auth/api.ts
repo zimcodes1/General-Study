@@ -117,7 +117,13 @@ export const authAPI = {
 
     if (!response.ok) {
       const error = await response.json();
-      throw new Error(error.error || 'Registration failed');
+      const message =
+        error.error ||
+        Object.entries(error)
+          .map(([field, msgs]) => `${field}: ${(msgs as string[]).join(', ')}`)
+          .join(' | ') ||
+        'Registration failed';
+      throw new Error(message);
     }
 
     return response.json();
